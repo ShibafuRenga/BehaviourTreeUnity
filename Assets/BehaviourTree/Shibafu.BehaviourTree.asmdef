@@ -1,0 +1,14 @@
+{
+    "name": "Shibafu.BehaviourTree",
+    "rootNamespace": "Shibafu.BehaviourTree",
+    "references": [],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

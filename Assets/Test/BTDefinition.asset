@@ -1,0 +1,19 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 42602c6de4d85437ea6058a7fa8e708f, type: 3}
+  m_Name: BTDefinition
+  m_EditorClassIdentifier: 
+  _json: "{\n  \"formatVersion\": 1,\n  \"root\": {\n    \"type\": \"sequence\",\n   
+    \"id\": \"432aed71115548deac6052125d287de8\",\n    \"editorX\": 320.0,\n    \"editorY\":
+    48.0,\n    \"children\": [\n      {\n        \"type\": \"log\",\n        \"id\":
+    \"9bef999a21f44349b471093d7921c7ce\",\n        \"editorX\": 621.0,\n        \"editorY\":
+    248.0\n      }\n    ]\n  }\n}"

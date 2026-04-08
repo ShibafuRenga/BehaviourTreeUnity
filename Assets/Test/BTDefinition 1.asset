@@ -1,0 +1,29 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 42602c6de4d85437ea6058a7fa8e708f, type: 3}
+  m_Name: BTDefinition 1
+  m_EditorClassIdentifier: 
+  _json: "{\n  \"formatVersion\": 1,\n  \"root\": {\n    \"type\": \"sequence\",\n   
+    \"id\": \"471a3fbd21594e17bdcbf2892f44f6a4\",\n    \"editorX\": 231.0,\n    \"editorY\":
+    -195.0,\n    \"children\": [\n      {\n        \"type\": \"wait\",\n        \"id\":
+    \"8bbbf223565f40e8916ff7af2540da87\",\n        \"editorX\": 615.0,\n        \"editorY\":
+    -465.5,\n        \"data\": {\n          \"duration\": 2,\n          \"unscaled\":
+    true\n        }\n      },\n      {\n        \"type\": \"wait\",\n        \"id\":
+    \"8bbbf223565f40e8916ff7af2540da87\",\n        \"editorX\": 616.0,\n        \"editorY\":
+    -231.0,\n        \"data\": {\n          \"duration\": 1,\n          \"unscaled\":
+    true\n        }\n      },\n      {\n        \"type\": \"wait\",\n        \"id\":
+    \"a0c8c71eb89645649386f7fab8c81195\",\n        \"editorX\": 616.0,\n        \"editorY\":
+    -31.0,\n        \"data\": {\n          \"duration\": 3,\n          \"unscaled\":
+    true\n        }\n      },\n      {\n        \"type\": \"log\",\n        \"id\":
+    \"a75da1cd1f2f4dd286475e1edce0667d\",\n        \"editorX\": 583.5,\n        \"editorY\":
+    212.0,\n        \"data\": {\n          \"message\": \"Hello BehaviourTree\",\n         
+    \"level\": \"warning\"\n        }\n      }\n    ]\n  }\n}"
