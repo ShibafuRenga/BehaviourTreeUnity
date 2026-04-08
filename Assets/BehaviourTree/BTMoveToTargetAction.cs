@@ -10,14 +10,14 @@ namespace Shibafu.BehaviourTree
     [BTNodeType("moveToTarget", "移动到目标 Move To Target", EditorMenuPath = "Leaf")]
     public sealed class BTMoveToTargetAction : BTAction
     {
-        [BTNodeInspectorField("subject", Label = "被移动物体")]
-        private Transform _subject;
+        [BTNodeInspectorField(Label = "被移动物体")]
+        private Transform subject;
 
-        [BTNodeInspectorField("target", Label = "目标物体")]
-        private Transform _target;
+        [BTNodeInspectorField(Label = "目标物体")]
+        private Transform target;
 
-        [BTNodeInspectorField("duration", Label = "持续时间（秒）")]
-        private float _duration = 3f;
+        [BTNodeInspectorField(Label = "持续时间（秒）")]
+        private float duration = 3f;
 
         private float _elapsed;
         private Vector3 _startPosition;
@@ -30,16 +30,12 @@ namespace Shibafu.BehaviourTree
         public override void InitFromJson(JObject data)
         {
             base.InitFromJson(data);
-            if (data == null)
-                return;
-            var d = data["duration"];
-            if (d != null)
-                _duration = Mathf.Max(0f, d.Value<float>());
+            duration = Mathf.Max(0f, duration);
         }
 
         protected override void OnStart(BTContext context)
         {
-            if (_subject == null || _target == null)
+            if (subject == null || this.target == null)
             {
                 Debug.LogWarning(
                     "[moveToTarget] subject 或 target 未解析：请在编辑器中绑定场景引用（GlobalObjectId）。");
@@ -47,29 +43,29 @@ namespace Shibafu.BehaviourTree
             }
 
             _elapsed = 0f;
-            _startPosition = _subject.position;
-            _endPosition = _target.position;
+            _startPosition = subject.position;
+            _endPosition = this.target.position;
         }
 
         protected override BTStatus OnTick(BTContext context)
         {
-            if (_subject == null || _target == null)
+            if (subject == null || this.target == null)
                 return BTStatus.Failure;
 
-            if (_duration <= 0f)
+            if (duration <= 0f)
             {
-                _subject.position = _endPosition;
+                subject.position = _endPosition;
                 return BTStatus.Success;
             }
 
             _elapsed += Time.deltaTime;
-            if (_elapsed >= _duration)
+            if (_elapsed >= duration)
             {
-                _subject.position = _endPosition;
+                subject.position = _endPosition;
                 return BTStatus.Success;
             }
 
-            _subject.position = Vector3.Lerp(_startPosition, _endPosition, _elapsed / _duration);
+            subject.position = Vector3.Lerp(_startPosition, _endPosition, _elapsed / duration);
             return BTStatus.Running;
         }
     }

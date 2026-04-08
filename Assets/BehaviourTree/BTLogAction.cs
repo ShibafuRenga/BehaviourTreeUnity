@@ -1,5 +1,3 @@
-using System;
-using Newtonsoft.Json.Linq;
 using UnityEngine;
 
 namespace Shibafu.BehaviourTree
@@ -11,11 +9,11 @@ namespace Shibafu.BehaviourTree
     [BTNodeType("log", "日志 Log", EditorMenuPath = "Leaf/Debug")]
     public sealed class BTLogAction : BTAction
     {
-        [BTNodeInspectorField("message")]
-        private string _message = string.Empty;
+        [BTNodeInspectorField(Label = "消息文本")]
+        private string message = string.Empty;
 
-        [BTNodeInspectorField("level")]
-        private LogLevel _level = LogLevel.Log;
+        [BTNodeInspectorField(Label = "日志级别")]
+        private LogLevel level = LogLevel.Log;
 
         public enum LogLevel
         {
@@ -31,39 +29,22 @@ namespace Shibafu.BehaviourTree
 
         public BTLogAction(string message, LogLevel level = LogLevel.Log, string name = null) : base(name ?? "Log")
         {
-            _message = message ?? string.Empty;
-            _level = level;
-        }
-
-        public override void InitFromJson(JObject data)
-        {
-            base.InitFromJson(data);
-            if (data == null)
-                return;
-            _message = data["message"]?.Value<string>() ?? string.Empty;
-            var levelRaw = data["level"]?.Value<string>();
-            _level = LogLevel.Log;
-            if (!string.IsNullOrEmpty(levelRaw))
-            {
-                if (string.Equals(levelRaw, "warning", StringComparison.OrdinalIgnoreCase))
-                    _level = LogLevel.Warning;
-                else if (string.Equals(levelRaw, "error", StringComparison.OrdinalIgnoreCase))
-                    _level = LogLevel.Error;
-            }
+            this.message = message ?? string.Empty;
+            this.level = level;
         }
 
         protected override BTStatus OnTick(BTContext context)
         {
-            switch (_level)
+            switch (level)
             {
                 case LogLevel.Warning:
-                    Debug.LogWarning(_message);
+                    Debug.LogWarning(message);
                     break;
                 case LogLevel.Error:
-                    Debug.LogError(_message);
+                    Debug.LogError(message);
                     break;
                 default:
-                    Debug.Log(_message);
+                    Debug.Log(message);
                     break;
             }
 

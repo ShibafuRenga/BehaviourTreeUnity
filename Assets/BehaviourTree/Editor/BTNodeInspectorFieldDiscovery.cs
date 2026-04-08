@@ -27,6 +27,9 @@ namespace Shibafu.BehaviourTree.Editor
             };
         }
 
+        /// <summary>与 JSON <c>data</c> 中的键一致，即字段/属性在元数据中的名称。</summary>
+        internal static string GetJsonKey(Binding b) => b.Member.Name;
+
         internal static Type ResolveClrType(string typeId)
         {
             if (string.IsNullOrWhiteSpace(typeId))
@@ -65,8 +68,6 @@ namespace Shibafu.BehaviourTree.Editor
                     var a = fi.GetCustomAttribute<BTNodeInspectorFieldAttribute>(false);
                     if (a == null)
                         continue;
-                    if (string.IsNullOrWhiteSpace(a.JsonKey))
-                        continue;
                     chunk.Add(new Binding(fi, a));
                 }
 
@@ -79,14 +80,12 @@ namespace Shibafu.BehaviourTree.Editor
                     var a = pi.GetCustomAttribute<BTNodeInspectorFieldAttribute>(false);
                     if (a == null)
                         continue;
-                    if (string.IsNullOrWhiteSpace(a.JsonKey))
-                        continue;
                     chunk.Add(new Binding(pi, a));
                 }
 
                 for (var i = chunk.Count - 1; i >= 0; i--)
                 {
-                    var k = chunk[i].Attr.JsonKey.Trim();
+                    var k = GetJsonKey(chunk[i]);
                     if (!seenKeys.Add(k))
                         chunk.RemoveAt(i);
                 }
@@ -96,7 +95,7 @@ namespace Shibafu.BehaviourTree.Editor
 
             return list
                 .OrderBy(b => b.Attr.ManualJsonOnly ? 1 : 0)
-                .ThenBy(b => b.Attr.JsonKey, StringComparer.OrdinalIgnoreCase)
+                .ThenBy(b => GetJsonKey(b), StringComparer.OrdinalIgnoreCase)
                 .ToList();
         }
 
@@ -104,7 +103,7 @@ namespace Shibafu.BehaviourTree.Editor
         {
             if (!string.IsNullOrEmpty(b.Attr.Label))
                 return b.Attr.Label;
-            return ObjectNames.NicifyVariableName(b.Attr.JsonKey);
+            return ObjectNames.NicifyVariableName(GetJsonKey(b));
         }
     }
 }

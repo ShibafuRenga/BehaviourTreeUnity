@@ -41,7 +41,7 @@ namespace Shibafu.BehaviourTree.Editor
 
             if (manualOnly.Count > 0)
             {
-                var keys = string.Join(", ", manualOnly.ConvertAll(b => b.Attr.JsonKey));
+                var keys = string.Join(", ", manualOnly.ConvertAll(b => BTNodeInspectorFieldDiscovery.GetJsonKey(b)));
                 EditorGUILayout.HelpBox($"以下键标记为仅手动编辑（ManualJsonOnly），当前面板不展示：{keys}", MessageType.None);
             }
 
@@ -74,7 +74,7 @@ namespace Shibafu.BehaviourTree.Editor
 
         private static void DrawBinding(JObject root, BTNodeInspectorFieldDiscovery.Binding b, string label)
         {
-            var key = b.Attr.JsonKey.Trim();
+            var key = BTNodeInspectorFieldDiscovery.GetJsonKey(b);
             var t = b.ValueType;
 
             if (t == typeof(string))

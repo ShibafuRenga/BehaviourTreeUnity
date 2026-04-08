@@ -11,11 +11,11 @@ namespace Shibafu.BehaviourTree
     [BTNodeType("wait", "等待 Wait", EditorMenuPath = "Leaf")]
     public sealed class BTWaitAction : BTAction
     {
-        [BTNodeInspectorField("seconds", Label = "秒 (seconds / duration)")]
-        private float _seconds;
+        [BTNodeInspectorField(Label = "秒（可与 duration 键互换）")]
+        private float seconds;
 
-        [BTNodeInspectorField("unscaled", Label = "使用非缩放时间 (unscaled)")]
-        private bool _useUnscaledTime;
+        [BTNodeInspectorField(Label = "使用非缩放时间")]
+        private bool unscaled;
         private float? _endTime;
 
         public BTWaitAction() : base("Wait")
@@ -24,8 +24,8 @@ namespace Shibafu.BehaviourTree
 
         public BTWaitAction(float seconds, bool unscaledTime = false, string name = null) : base(name ?? "Wait")
         {
-            _seconds = Math.Max(0f, seconds);
-            _useUnscaledTime = unscaledTime;
+            this.seconds = Math.Max(0f, seconds);
+            unscaled = unscaledTime;
         }
 
         public override void InitFromJson(JObject data)
@@ -33,9 +33,9 @@ namespace Shibafu.BehaviourTree
             base.InitFromJson(data);
             if (data == null)
                 return;
-            var s = data["seconds"] ?? data["duration"];
-            _seconds = s != null ? Math.Max(0f, s.Value<float>()) : 0f;
-            _useUnscaledTime = data["unscaled"]?.Value<bool>() ?? false;
+            if (data["seconds"] == null && data["duration"] != null)
+                seconds = Math.Max(0f, data["duration"].Value<float>());
+            seconds = Math.Max(0f, seconds);
         }
 
         public override void Reset()
@@ -46,12 +46,12 @@ namespace Shibafu.BehaviourTree
 
         protected override BTStatus OnTick(BTContext context)
         {
-            if (_seconds <= 0f)
+            if (seconds <= 0f)
                 return BTStatus.Success;
 
-            var now = _useUnscaledTime ? Time.unscaledTime : Time.time;
+            var now = unscaled ? Time.unscaledTime : Time.time;
             if (!_endTime.HasValue)
-                _endTime = now + _seconds;
+                _endTime = now + seconds;
 
             if (now < _endTime.Value)
                 return BTStatus.Running;
