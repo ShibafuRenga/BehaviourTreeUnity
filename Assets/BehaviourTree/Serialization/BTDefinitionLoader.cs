@@ -35,7 +35,8 @@ namespace Shibafu.BehaviourTree.Serialization
         public static BehaviourTree LoadTree(string json, BTDefinitionLoadContext context = null)
         {
             var doc = ParseDocument(json);
-            return LoadTree(doc, context);
+            BTDefinitionDocumentIds.NormalizeUniqueIds(doc);
+            return LoadTreeAfterNormalized(doc, context);
         }
 
         public static BehaviourTree LoadTree(BTDefinitionDocument document, BTDefinitionLoadContext context = null)
@@ -47,6 +48,12 @@ namespace Shibafu.BehaviourTree.Serialization
                 throw new BTDefinitionException(
                     $"Unsupported formatVersion {document.FormatVersion}; supported: {SupportedFormatVersion}.");
 
+            BTDefinitionDocumentIds.NormalizeUniqueIds(document);
+            return LoadTreeAfterNormalized(document, context);
+        }
+
+        private static BehaviourTree LoadTreeAfterNormalized(BTDefinitionDocument document, BTDefinitionLoadContext context)
+        {
             context ??= BTDefinitionLoadContext.CreateWithBuiltIns();
             var root = context.BuildNode(document.Root);
             return new BehaviourTree(root);

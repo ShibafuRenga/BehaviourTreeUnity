@@ -13,14 +13,14 @@ namespace Shibafu.BehaviourTree.Editor
     /// </summary>
     public static class BehaviourTreeGraphSerializer
     {
-        /// <summary>与 <see cref="BehaviourTreeGraphView.CreateLinkedNode"/> 中节点高度一致，用于布局估算。</summary>
-        private const float NodeLayoutHeight = 200f;
+        /// <summary>与 <see cref="BTGraphNode.CompactNodeHeight"/> 一致，用于无坐标时的自动布局估算。</summary>
+        private static readonly float NodeLayoutHeight = BTGraphNode.CompactNodeHeight;
 
         /// <summary>父节点顶到第一个子节点顶的垂直间距。</summary>
-        private const float VerticalGap = 220f;
+        private const float VerticalGap = 112f;
 
         /// <summary>同一父节点下兄弟子树之间的垂直间距。</summary>
-        private const float SiblingVerticalGap = 36f;
+        private const float SiblingVerticalGap = 28f;
 
         public static BTDefinitionDocument GraphToDocument(BehaviourTreeGraphView graph, out string error)
         {
@@ -143,9 +143,9 @@ namespace Shibafu.BehaviourTree.Editor
             graph.ClearGraph();
             if (doc?.Root == null)
                 return false;
-            var added = EnsureNodeIds(doc.Root);
+            var changed = BTDefinitionDocumentIds.NormalizeUniqueIds(doc);
             PlaceRecursive(doc.Root, new Vector2(320, 48), graph, null, out _, out _, out _);
-            return added;
+            return changed;
         }
 
         private static Vector2 ResolveEditorPosition(BTNodeDefinition def, Vector2 fallback)
@@ -153,24 +153,6 @@ namespace Shibafu.BehaviourTree.Editor
             if (def != null && def.EditorX.HasValue && def.EditorY.HasValue)
                 return new Vector2(def.EditorX.Value, def.EditorY.Value);
             return fallback;
-        }
-
-        private static bool EnsureNodeIds(BTNodeDefinition node)
-        {
-            if (node == null)
-                return false;
-            var added = false;
-            if (string.IsNullOrWhiteSpace(node.Id))
-            {
-                node.Id = Guid.NewGuid().ToString("N");
-                added = true;
-            }
-
-            if (node.Children == null)
-                return added;
-            foreach (var c in node.Children)
-                added |= EnsureNodeIds(c);
-            return added;
         }
 
         /// <param name="fallbackPosition">当 JSON 无 <see cref="BTNodeDefinition.EditorX"/>/<c>EditorY</c> 时使用的自动布局位置。</param>

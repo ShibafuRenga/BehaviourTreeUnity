@@ -8,7 +8,7 @@ namespace Shibafu.BehaviourTree
     /// 等待指定秒数：期间返回 <see cref="BTStatus.Running"/>，结束后返回 <see cref="BTStatus.Success"/>。
     /// JSON：<c>data.seconds</c> 或 <c>data.duration</c>（秒，浮点）；可选 <c>data.unscaled</c> 为 true 时使用 <see cref="Time.unscaledTime"/>。
     /// </summary>
-    [BTNodeType("wait", "等待 Wait")]
+    [BTNodeType("wait", "等待 Wait", EditorMenuPath = "Leaf")]
     public sealed class BTWaitAction : BTAction
     {
         private float _seconds;

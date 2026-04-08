@@ -3,7 +3,7 @@ namespace Shibafu.BehaviourTree
     /// <summary>
     /// 顺序：子节点从左到右全部 Success 才 Success；任一 Failure 则 Failure；遇 Running 则保持下标并返回 Running。
     /// </summary>
-    [BTNodeType("sequence", "顺序 Sequence")]
+    [BTNodeType("sequence", "顺序 Sequence", EditorMenuPath = "Composite")]
     public class BTSequence : BTComposite
     {
         private int _index;

@@ -11,6 +11,12 @@ namespace Shibafu.BehaviourTree
         public string TypeId { get; }
         public string DisplayName { get; }
 
+        /// <summary>
+        /// 编辑器里类型选择菜单的分组路径（不含最后一级显示名），用 '/' 分段。
+        /// 例：<c>Composite</c>、<c>Leaf</c>；与 <see cref="DisplayName"/> 组合为 <c>Composite/顺序 Sequence</c>。
+        /// </summary>
+        public string EditorMenuPath { get; set; }
+
         public BTNodeTypeAttribute(string typeId, string displayName = null)
         {
             TypeId = typeId ?? throw new ArgumentNullException(nameof(typeId));

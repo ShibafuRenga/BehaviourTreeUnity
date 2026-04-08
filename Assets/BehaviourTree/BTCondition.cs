@@ -5,7 +5,7 @@ namespace Shibafu.BehaviourTree
     /// <summary>
     /// 叶子：条件为真返回 Success，否则 Failure（瞬时，不维持 Running）。
     /// </summary>
-    [BTNodeType("condition", "条件 Condition")]
+    [BTNodeType("condition", "条件 Condition", EditorMenuPath = "Condition")]
     public class BTCondition : BTNode
     {
         private readonly Func<BTContext, bool> _predicate;

@@ -24,10 +24,6 @@ namespace Shibafu.BehaviourTree.Editor
             this.AddManipulator(new SelectionDragger());
             this.AddManipulator(new RectangleSelector());
 
-            var miniMap = new MiniMap { anchored = true };
-            miniMap.SetPosition(new Rect(12, 48, 200, 120));
-            Add(miniMap);
-
             this.AddManipulator(new ContextualMenuManipulator(BuildBackgroundMenu));
 
             focusable = true;
@@ -73,8 +69,8 @@ namespace Shibafu.BehaviourTree.Editor
         {
             var menu = new GenericMenu();
             var entries = fromOutput
-                ? BTEditorNodeTypeDiscovery.GetOrderedEntries()
-                : BTEditorNodeTypeDiscovery.GetOrderedEntriesWithChildPortOnly();
+                ? BTEditorNodeTypeDiscovery.GetEditorTypeEntries()
+                : BTEditorNodeTypeDiscovery.GetEditorTypeEntriesWithChildPortOnly();
 
             if (!fromOutput && entries.Count == 0)
             {
@@ -82,20 +78,12 @@ namespace Shibafu.BehaviourTree.Editor
                 return;
             }
 
-            foreach (var e in entries)
-            {
-                var tid = e.TypeId;
-                menu.AddItem(new GUIContent(e.DisplayName), false,
-                    () => ScheduleWireSpawn(anchor, fromOutput, graphLocal, tid, false));
-            }
-
-            if (fromOutput)
-            {
-                menu.AddSeparator(string.Empty);
-                menu.AddItem(new GUIContent("自定义类型…"), false,
-                    () => ScheduleWireSpawn(anchor, fromOutput, graphLocal, null, true));
-            }
-
+            BTEditorNodeTypeDiscovery.PopulateGenericMenuCreateNodes(
+                menu,
+                tid => ScheduleWireSpawn(anchor, fromOutput, graphLocal, tid, false),
+                () => ScheduleWireSpawn(anchor, fromOutput, graphLocal, null, true),
+                includeCustomSlot: fromOutput,
+                entries);
             menu.ShowAsContext();
         }
 
@@ -104,17 +92,15 @@ namespace Shibafu.BehaviourTree.Editor
             EditorApplication.delayCall += () =>
             {
                 var spawnPos = graphLocal + new Vector2(28f, 28f);
-                var node = CreateNodeAt(spawnPos);
-                if (customSlot)
-                    node.ApplySpawnCustomSlot();
-                else
-                    node.ApplySpawnPresetType(typeId);
-                node.RefreshChildOutputPort(this);
+                var node = CreateNodeAt(spawnPos, typeId, customSlot);
 
                 if (fromOutput)
                     ConnectPorts(anchor, node.InputPort);
                 else if (node.OutputPort != null)
                     ConnectPorts(node.OutputPort, anchor);
+
+                ClearSelection();
+                AddToSelection(node);
             };
         }
 
@@ -183,7 +169,11 @@ namespace Shibafu.BehaviourTree.Editor
             else
                 spawnLocal = new Vector2(400f, 200f);
 
-            evt.menu.AppendAction("添加节点", _ => CreateNodeAt(spawnLocal));
+            BTEditorNodeTypeDiscovery.AppendCreateNodeActions(
+                evt.menu,
+                tid => EditorApplication.delayCall += () => CreateNodeAt(spawnLocal, tid, false),
+                () => EditorApplication.delayCall += () => CreateNodeAt(spawnLocal, null, true),
+                includeCustomSlot: true);
         }
 
         public override List<Port> GetCompatiblePorts(Port startPort, NodeAdapter nodeAdapter)
@@ -218,16 +208,23 @@ namespace Shibafu.BehaviourTree.Editor
             }
         }
 
-        public BTGraphNode CreateNodeAt(Vector2 graphLocalPosition)
+        /// <param name="presetTypeId">非自定义时写入的 type；为 null 且 <paramref name="customSlot"/> 为 false 时保留节点构造默认（一般为 sequence）。</param>
+        public BTGraphNode CreateNodeAt(Vector2 graphLocalPosition, string presetTypeId = null, bool customSlot = false)
         {
             var node = new BTGraphNode();
             node.SetPosition(new Rect(
                 graphLocalPosition.x,
                 graphLocalPosition.y,
                 BTGraphNode.DefaultWidth,
-                200));
+                BTGraphNode.CompactNodeHeight));
             AddElement(node);
+            if (customSlot)
+                node.ApplySpawnCustomSlot();
+            else if (!string.IsNullOrWhiteSpace(presetTypeId))
+                node.ApplySpawnPresetType(presetTypeId);
             node.RefreshChildOutputPort(this);
+            ClearSelection();
+            AddToSelection(node);
             return node;
         }
 
@@ -251,7 +248,7 @@ namespace Shibafu.BehaviourTree.Editor
                 graphLocalPosition.x,
                 graphLocalPosition.y,
                 BTGraphNode.DefaultWidth,
-                200));
+                BTGraphNode.CompactNodeHeight));
             AddElement(node);
             node.ApplyFromDefinition(def);
             node.RefreshChildOutputPort(this);

@@ -3,7 +3,7 @@ namespace Shibafu.BehaviourTree
     /// <summary>
     /// 选择：子节点从左到右，任一 Success 即 Success；全部 Failure 才 Failure；遇 Running 则保持下标并返回 Running。
     /// </summary>
-    [BTNodeType("selector", "选择 Selector")]
+    [BTNodeType("selector", "选择 Selector", EditorMenuPath = "Composite")]
     public class BTSelector : BTComposite
     {
         private int _index;

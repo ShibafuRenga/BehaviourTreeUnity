@@ -3,7 +3,7 @@ namespace Shibafu.BehaviourTree
     /// <summary>
     /// 取反：Success ↔ Failure，Running 不变。
     /// </summary>
-    [BTNodeType("inverter", "取反 Inverter")]
+    [BTNodeType("inverter", "取反 Inverter", EditorMenuPath = "Composite")]
     public class BTInverter : BTDecorator
     {
         public BTInverter(BTNode child, string name = null) : base(child, name ?? "Inverter")

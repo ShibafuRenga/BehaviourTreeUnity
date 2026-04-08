@@ -75,6 +75,23 @@ namespace Shibafu.BehaviourTree.Tests
         }
 
         [Test]
+        public void NormalizeUniqueIds_DedupesDuplicateIds_WithDeterministicSuffix()
+        {
+            const string json = @"{
+  ""formatVersion"": 1,
+  ""root"": { ""type"": ""sequence"", ""id"": ""rootid"", ""children"": [
+    { ""type"": ""wait"", ""id"": ""same"", ""data"": { ""seconds"": 0 } },
+    { ""type"": ""wait"", ""id"": ""same"", ""data"": { ""seconds"": 0 } }
+  ]}
+}";
+            var doc = BTDefinitionLoader.ParseDocument(json);
+            Assert.IsTrue(BTDefinitionDocumentIds.NormalizeUniqueIds(doc));
+            Assert.AreEqual("same", doc.Root.Children[0].Id);
+            Assert.AreEqual("same__2", doc.Root.Children[1].Id);
+            Assert.IsFalse(BTDefinitionDocumentIds.NormalizeUniqueIds(doc));
+        }
+
+        [Test]
         public void CustomNodeType_InvokesRegisteredFactory()
         {
             const string json = @"{
