@@ -14,6 +14,11 @@ namespace Shibafu.BehaviourTree.Editor
     /// </summary>
     public sealed class BehaviourTreeGraphView : GraphView, IEdgeConnectorListener
     {
+        /// <summary>
+        /// <see cref="ClearGraph"/> 时递增。延迟创建节点（<see cref="EditorApplication.delayCall"/>）若晚于图被清空/重载，则世代已变，应丢弃以免多出幽灵节点。
+        /// </summary>
+        private int _graphContentEpoch;
+
         public BehaviourTreeGraphView()
         {
             style.flexGrow = 1;
@@ -89,8 +94,14 @@ namespace Shibafu.BehaviourTree.Editor
 
         private void ScheduleWireSpawn(Port anchor, bool fromOutput, Vector2 graphLocal, string typeId, bool customSlot)
         {
+            var epochAtSchedule = _graphContentEpoch;
             EditorApplication.delayCall += () =>
             {
+                if (epochAtSchedule != _graphContentEpoch)
+                    return;
+                if (anchor?.node == null || !nodes.Contains(anchor.node))
+                    return;
+
                 var spawnPos = graphLocal + new Vector2(28f, 28f);
                 var node = CreateNodeAt(spawnPos, typeId, customSlot);
 
@@ -171,8 +182,26 @@ namespace Shibafu.BehaviourTree.Editor
 
             BTEditorNodeTypeDiscovery.AppendCreateNodeActions(
                 evt.menu,
-                tid => EditorApplication.delayCall += () => CreateNodeAt(spawnLocal, tid, false),
-                () => EditorApplication.delayCall += () => CreateNodeAt(spawnLocal, null, true),
+                tid =>
+                {
+                    var epochAtPick = _graphContentEpoch;
+                    EditorApplication.delayCall += () =>
+                    {
+                        if (epochAtPick != _graphContentEpoch)
+                            return;
+                        CreateNodeAt(spawnLocal, tid, false);
+                    };
+                },
+                () =>
+                {
+                    var epochAtPick = _graphContentEpoch;
+                    EditorApplication.delayCall += () =>
+                    {
+                        if (epochAtPick != _graphContentEpoch)
+                            return;
+                        CreateNodeAt(spawnLocal, null, true);
+                    };
+                },
                 includeCustomSlot: true);
         }
 
@@ -185,6 +214,7 @@ namespace Shibafu.BehaviourTree.Editor
 
         public void ClearGraph()
         {
+            _graphContentEpoch++;
             ApplyRuntimeDebugStatuses(null);
             edges.ToList().ForEach(RemoveElement);
             nodes.ToList().ForEach(RemoveElement);

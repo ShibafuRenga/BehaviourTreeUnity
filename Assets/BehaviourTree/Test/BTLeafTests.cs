@@ -30,6 +30,39 @@ namespace Shibafu.BehaviourTree.Tests
         }
 
         [Test]
+        public void DelegateAction_CallsOnStartOncePerVisit_ThenOnTickUntilTerminal()
+        {
+            var ctx = new BTContext();
+            var starts = 0;
+            var ticks = 0;
+            var returnRunning = true;
+            var node = new BTDelegateAction(
+                _ =>
+                {
+                    ticks++;
+                    return returnRunning ? BTStatus.Running : BTStatus.Success;
+                },
+                onStart: _ => starts++);
+
+            Assert.AreEqual(BTStatus.Running, node.Tick(ctx));
+            Assert.AreEqual(1, starts);
+            Assert.AreEqual(1, ticks);
+
+            Assert.AreEqual(BTStatus.Running, node.Tick(ctx));
+            Assert.AreEqual(1, starts);
+            Assert.AreEqual(2, ticks);
+
+            returnRunning = false;
+            Assert.AreEqual(BTStatus.Success, node.Tick(ctx));
+            Assert.AreEqual(1, starts);
+            Assert.AreEqual(3, ticks);
+
+            Assert.AreEqual(BTStatus.Success, node.Tick(ctx));
+            Assert.AreEqual(2, starts);
+            Assert.AreEqual(4, ticks);
+        }
+
+        [Test]
         public void Inverter_SwapsSuccessAndFailure()
         {
             var ctx = new BTContext();

@@ -11,7 +11,10 @@ namespace Shibafu.BehaviourTree
     [BTNodeType("log", "日志 Log", EditorMenuPath = "Leaf/Debug")]
     public sealed class BTLogAction : BTAction
     {
+        [BTNodeInspectorField("message")]
         private string _message = string.Empty;
+
+        [BTNodeInspectorField("level")]
         private LogLevel _level = LogLevel.Log;
 
         public enum LogLevel
@@ -34,6 +37,7 @@ namespace Shibafu.BehaviourTree
 
         public override void InitFromJson(JObject data)
         {
+            base.InitFromJson(data);
             if (data == null)
                 return;
             _message = data["message"]?.Value<string>() ?? string.Empty;

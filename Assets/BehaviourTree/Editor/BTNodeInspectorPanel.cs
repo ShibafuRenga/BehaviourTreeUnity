@@ -1,11 +1,12 @@
 using System.Collections.Generic;
+using UnityEditor;
 using UnityEngine;
 using UnityEngine.UIElements;
 
 namespace Shibafu.BehaviourTree.Editor
 {
     /// <summary>
-    /// 左侧属性面板：编辑选中 <see cref="BTGraphNode"/> 的类型、名称、data JSON。
+    /// 左侧属性面板：编辑选中 <see cref="BTGraphNode"/> 的类型、名称与 data（Inspector 字段）。
     /// </summary>
     public sealed class BTNodeInspectorPanel : VisualElement
     {
@@ -15,7 +16,7 @@ namespace Shibafu.BehaviourTree.Editor
         private readonly DropdownField _typeDropdown;
         private readonly TextField _customTypeField;
         private readonly TextField _nameField;
-        private readonly TextField _dataField;
+        private readonly IMGUIContainer _dataImGui;
         private readonly Label _idLabel;
 
         public BTNodeInspectorPanel()
@@ -32,13 +33,9 @@ namespace Shibafu.BehaviourTree.Editor
             _nameField = new TextField("名称");
             _nameField.RegisterValueChangedCallback(_ => OnNameChanged());
 
-            _dataField = new TextField("data (JSON)")
-            {
-                multiline = true
-            };
-            _dataField.style.minHeight = 120;
-            _dataField.style.whiteSpace = WhiteSpace.Normal;
-            _dataField.RegisterValueChangedCallback(_ => OnDataChanged());
+            _dataImGui = new IMGUIContainer(OnInspectorDataImGui);
+            _dataImGui.style.flexShrink = 0;
+            _dataImGui.style.minHeight = 4f;
 
             _headerLabel = new Label("节点属性");
             _headerLabel.style.unityFontStyleAndWeight = FontStyle.Bold;
@@ -60,10 +57,7 @@ namespace Shibafu.BehaviourTree.Editor
             Add(_typeDropdown);
             Add(_customTypeField);
             Add(_nameField);
-            var dataScroll = new ScrollView { verticalScrollerVisibility = ScrollerVisibility.Auto };
-            dataScroll.style.maxHeight = 280;
-            dataScroll.Add(_dataField);
-            Add(dataScroll);
+            Add(_dataImGui);
             Add(_idLabel);
 
             Bind(null);
@@ -78,7 +72,7 @@ namespace Shibafu.BehaviourTree.Editor
             _typeDropdown.SetEnabled(editing);
             _customTypeField.SetEnabled(editing);
             _nameField.SetEnabled(editing);
-            _dataField.SetEnabled(editing);
+            _dataImGui.SetEnabled(editing);
 
             if (node == null)
             {
@@ -100,12 +94,12 @@ namespace Shibafu.BehaviourTree.Editor
             _typeDropdown.SetValueWithoutNotify(_typeDropdown.choices[idx]);
             _customTypeField.SetValueWithoutNotify(node.CustomTypeText);
             _nameField.SetValueWithoutNotify(node.NodeNameText);
-            _dataField.SetValueWithoutNotify(node.DataJsonText);
 
             _headerLabel.text = $"节点 — {node.title}";
             _idLabel.text = $"id: {node.DebugNodeId}";
 
             RefreshCustomVisibility();
+            _dataImGui.MarkDirtyRepaint();
         }
 
         private void RefreshCustomVisibility()
@@ -127,6 +121,7 @@ namespace Shibafu.BehaviourTree.Editor
             _bound.TypeChoiceIndex = _typeDropdown.index;
             RefreshCustomVisibility();
             _headerLabel.text = $"节点 — {_bound.title}";
+            _dataImGui.MarkDirtyRepaint();
         }
 
         private void OnCustomTypeChanged()
@@ -135,6 +130,7 @@ namespace Shibafu.BehaviourTree.Editor
                 return;
             _bound.CustomTypeText = _customTypeField.value;
             _headerLabel.text = $"节点 — {_bound.title}";
+            _dataImGui.MarkDirtyRepaint();
         }
 
         private void OnNameChanged()
@@ -145,11 +141,15 @@ namespace Shibafu.BehaviourTree.Editor
             _headerLabel.text = $"节点 — {_bound.title}";
         }
 
-        private void OnDataChanged()
+        private void OnInspectorDataImGui()
         {
             if (_bound == null)
                 return;
-            _bound.DataJsonText = _dataField.value;
+
+            var json = _bound.DataJsonText ?? "";
+            BTNodeInspectorDataImGui.Draw(_bound.EffectiveType, ref json, out var changed);
+            if (changed)
+                _bound.DataJsonText = json;
         }
     }
 }

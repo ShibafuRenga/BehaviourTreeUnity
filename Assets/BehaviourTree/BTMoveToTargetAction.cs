@@ -1,0 +1,76 @@
+using Newtonsoft.Json.Linq;
+using UnityEngine;
+
+namespace Shibafu.BehaviourTree
+{
+    /// <summary>
+    /// 在 <see cref="OnStart"/> 记录起点/终点，随后在 <see cref="OnTick"/> 内按 <c>duration</c> 秒插值移动 <c>subject</c> 到 <c>target</c> 世界坐标。
+    /// 引用在代码中为 <see cref="Transform"/>；序列化为 GlobalObjectId（编辑器下加载时由绑定器解析）。
+    /// </summary>
+    [BTNodeType("moveToTarget", "移动到目标 Move To Target", EditorMenuPath = "Leaf")]
+    public sealed class BTMoveToTargetAction : BTAction
+    {
+        [BTNodeInspectorField("subject", Label = "被移动物体")]
+        private Transform _subject;
+
+        [BTNodeInspectorField("target", Label = "目标物体")]
+        private Transform _target;
+
+        [BTNodeInspectorField("duration", Label = "持续时间（秒）")]
+        private float _duration = 3f;
+
+        private float _elapsed;
+        private Vector3 _startPosition;
+        private Vector3 _endPosition;
+
+        public BTMoveToTargetAction() : base("MoveToTarget")
+        {
+        }
+
+        public override void InitFromJson(JObject data)
+        {
+            base.InitFromJson(data);
+            if (data == null)
+                return;
+            var d = data["duration"];
+            if (d != null)
+                _duration = Mathf.Max(0f, d.Value<float>());
+        }
+
+        protected override void OnStart(BTContext context)
+        {
+            if (_subject == null || _target == null)
+            {
+                Debug.LogWarning(
+                    "[moveToTarget] subject 或 target 未解析：请在编辑器中绑定场景引用（GlobalObjectId）。");
+                return;
+            }
+
+            _elapsed = 0f;
+            _startPosition = _subject.position;
+            _endPosition = _target.position;
+        }
+
+        protected override BTStatus OnTick(BTContext context)
+        {
+            if (_subject == null || _target == null)
+                return BTStatus.Failure;
+
+            if (_duration <= 0f)
+            {
+                _subject.position = _endPosition;
+                return BTStatus.Success;
+            }
+
+            _elapsed += Time.deltaTime;
+            if (_elapsed >= _duration)
+            {
+                _subject.position = _endPosition;
+                return BTStatus.Success;
+            }
+
+            _subject.position = Vector3.Lerp(_startPosition, _endPosition, _elapsed / _duration);
+            return BTStatus.Running;
+        }
+    }
+}

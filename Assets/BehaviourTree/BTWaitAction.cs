@@ -11,7 +11,10 @@ namespace Shibafu.BehaviourTree
     [BTNodeType("wait", "等待 Wait", EditorMenuPath = "Leaf")]
     public sealed class BTWaitAction : BTAction
     {
+        [BTNodeInspectorField("seconds", Label = "秒 (seconds / duration)")]
         private float _seconds;
+
+        [BTNodeInspectorField("unscaled", Label = "使用非缩放时间 (unscaled)")]
         private bool _useUnscaledTime;
         private float? _endTime;
 
@@ -27,6 +30,7 @@ namespace Shibafu.BehaviourTree
 
         public override void InitFromJson(JObject data)
         {
+            base.InitFromJson(data);
             if (data == null)
                 return;
             var s = data["seconds"] ?? data["duration"];
@@ -36,6 +40,7 @@ namespace Shibafu.BehaviourTree
 
         public override void Reset()
         {
+            base.Reset();
             _endTime = null;
         }
 
