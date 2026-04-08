@@ -13,17 +13,34 @@ MonoBehaviour:
   m_Name: BTDefinition 1
   m_EditorClassIdentifier: 
   _json: "{\n  \"formatVersion\": 1,\n  \"root\": {\n    \"type\": \"sequence\",\n   
-    \"id\": \"471a3fbd21594e17bdcbf2892f44f6a4\",\n    \"editorX\": 231.0,\n    \"editorY\":
-    -195.0,\n    \"children\": [\n      {\n        \"type\": \"wait\",\n        \"id\":
-    \"8bbbf223565f40e8916ff7af2540da87\",\n        \"editorX\": 616.0,\n        \"editorY\":
-    -477.0,\n        \"data\": {\n          \"duration\": 2,\n          \"unscaled\":
-    true\n        }\n      },\n      {\n        \"type\": \"wait\",\n        \"id\":
-    \"8bbbf223565f40e8916ff7af2540da87__2\",\n        \"editorX\": 616.0,\n       
-    \"editorY\": -250.0,\n        \"data\": {\n          \"duration\": 1,\n         
-    \"unscaled\": true\n        }\n      },\n      {\n        \"type\": \"wait\",\n       
-    \"id\": \"a0c8c71eb89645649386f7fab8c81195\",\n        \"editorX\": 616.0,\n       
-    \"editorY\": -55.5,\n        \"data\": {\n          \"duration\": 3,\n         
-    \"unscaled\": true\n        }\n      },\n      {\n        \"type\": \"log\",\n       
-    \"id\": \"a75da1cd1f2f4dd286475e1edce0667d\",\n        \"editorX\": 634.0,\n       
-    \"editorY\": 122.5,\n        \"data\": {\n          \"message\": \"Hello BehaviourTree\",\n         
-    \"level\": \"warning\"\n        }\n      }\n    ]\n  }\n}"
+    \"id\": \"471a3fbd21594e17bdcbf2892f44f6a4\",\n    \"editorX\": 211.5,\n    \"editorY\":
+    182.0,\n    \"children\": [\n      {\n        \"type\": \"wait\",\n        \"id\":
+    \"93e5883f41344bb1802a78a940fee90a\",\n        \"editorX\": 490.0,\n        \"editorY\":
+    -162.0,\n        \"data\": {\n          \"seconds\": 5.0\n        }\n      },\n     
+    {\n        \"type\": \"log\",\n        \"id\": \"f6a7f75e1ad94abfb49018264cdd1478\",\n       
+    \"editorX\": 490.0,\n        \"editorY\": -69.0,\n        \"data\": {\n         
+    \"level\": \"log\",\n          \"message\": \"Start\"\n        }\n      },\n     
+    {\n        \"type\": \"wait\",\n        \"id\": \"8bbbf223565f40e8916ff7af2540da87\",\n       
+    \"editorX\": 490.0,\n        \"editorY\": 28.0,\n        \"data\": {\n         
+    \"duration\": 2,\n          \"unscaled\": true,\n          \"seconds\": 1.0\n       
+    }\n      },\n      {\n        \"type\": \"wait\",\n        \"id\": \"8bbbf223565f40e8916ff7af2540da87__2\",\n       
+    \"editorX\": 490.0,\n        \"editorY\": 105.0,\n        \"data\": {\n         
+    \"unscaled\": false,\n          \"seconds\": 2.0\n        }\n      },\n     
+    {\n        \"type\": \"wait\",\n        \"id\": \"a0c8c71eb89645649386f7fab8c81195\",\n       
+    \"editorX\": 490.0,\n        \"editorY\": 182.0,\n        \"data\": {\n         
+    \"duration\": 3,\n          \"unscaled\": true,\n          \"seconds\": 3.0\n       
+    }\n      },\n      {\n        \"type\": \"moveToTarget\",\n        \"id\": \"f3bada9a9d3f4027a82a648e6a05d94a__2\",\n       
+    \"editorX\": 490.0,\n        \"editorY\": 259.0,\n        \"data\": {\n         
+    \"subject\": \"GlobalObjectId_V1-2-9fc0d4010bbf28b4594072e72b8655ab-669691057-0\",\n         
+    \"target\": \"GlobalObjectId_V1-2-9fc0d4010bbf28b4594072e72b8655ab-153437452-0\",\n         
+    \"duration\": 3.0\n        }\n      },\n      {\n        \"type\": \"log\",\n       
+    \"id\": \"a75da1cd1f2f4dd286475e1edce0667d\",\n        \"editorX\": 490.0,\n       
+    \"editorY\": 359.0,\n        \"data\": {\n          \"message\": \"Hello BehaviourTree\",\n         
+    \"level\": \"warning\"\n        }\n      },\n      {\n        \"type\": \"wait\",\n       
+    \"id\": \"d5682f12e0e44744968ac7e42a67d528\",\n        \"editorX\": 490.0,\n       
+    \"editorY\": 436.0,\n        \"data\": {\n          \"seconds\": 3.0\n       
+    }\n      },\n      {\n        \"type\": \"moveToTarget\",\n        \"id\": \"9e92137f77d348559086b0a575d44822\",\n       
+    \"editorX\": 490.0,\n        \"editorY\": 532.5,\n        \"data\": {\n         
+    \"subject\": \"GlobalObjectId_V1-2-9fc0d4010bbf28b4594072e72b8655ab-669691057-0\",\n         
+    \"target\": \"GlobalObjectId_V1-2-9fc0d4010bbf28b4594072e72b8655ab-760945260-0\",\n         
+    \"duration\": 2.0\n        }\n      }\n    ]\n  }\n}"
