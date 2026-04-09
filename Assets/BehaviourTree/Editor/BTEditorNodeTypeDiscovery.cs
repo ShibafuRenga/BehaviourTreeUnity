@@ -25,14 +25,10 @@ namespace Shibafu.BehaviourTree.Editor
 
     /// <summary>
     /// 通过 <see cref="BTNodeTypeAttribute"/> 收集节点类型（供菜单、Inspector 下拉使用）。
-    /// 排除未带特性的抽象类（如 <see cref="BTAction"/>）。JSON 的 <c>type: "action"</c>（委托 handler）不作为图节点类型，请用「自定义类型」或手写 JSON。
+    /// 排除未带特性的抽象类（如 <see cref="BTAction"/>）。JSON 的 <c>type: "action"</c>（委托 handler）不作为图节点类型，需在 JSON 中手写或由加载器处理。
     /// </summary>
     public static class BTEditorNodeTypeDiscovery
     {
-        private const string CustomChoiceLabel = "自定义类型…";
-
-        public static string CustomTypeMenuLabel => CustomChoiceLabel;
-
         /// <summary>菜单项完整路径：<c>分组/显示名</c>；无分组时仅为显示名。</summary>
         public static string FullMenuPath(BTEditorTypeEntry e)
         {
@@ -104,7 +100,7 @@ namespace Shibafu.BehaviourTree.Editor
             return !type.IsSealed;
         }
 
-        /// <summary>与菜单顺序一致（按 <see cref="FullMenuPath"/>）的 (TypeId, DisplayName)。不含「自定义」项。</summary>
+        /// <summary>与菜单顺序一致（按 <see cref="FullMenuPath"/>）的 (TypeId, DisplayName)。</summary>
         public static IReadOnlyList<(string TypeId, string DisplayName)> GetOrderedEntries()
         {
             return GetEditorTypeEntries()
@@ -135,7 +131,7 @@ namespace Shibafu.BehaviourTree.Editor
                 .ToList();
         }
 
-        /// <summary>构建下拉标签列表（末尾为自定义项）；标签为完整菜单路径便于区分分组。</summary>
+        /// <summary>构建下拉标签列表；标签为完整菜单路径便于区分分组。</summary>
         public static void BuildChoiceLists(out List<string> labels, out List<string> typeIds)
         {
             labels = new List<string>();
@@ -145,16 +141,11 @@ namespace Shibafu.BehaviourTree.Editor
                 labels.Add(FullMenuPath(e));
                 typeIds.Add(e.TypeId);
             }
-
-            labels.Add(CustomChoiceLabel);
-            typeIds.Add(null);
         }
 
         public static void AppendCreateNodeActions(
             UnityEngine.UIElements.DropdownMenu menu,
             Action<string> onPickType,
-            Action onPickCustom,
-            bool includeCustomSlot,
             IReadOnlyList<BTEditorTypeEntry> entries = null)
         {
             entries ??= GetEditorTypeEntries();
@@ -164,30 +155,16 @@ namespace Shibafu.BehaviourTree.Editor
                 var tid = e.TypeId;
                 menu.AppendAction(path, _ => onPickType(tid), UnityEngine.UIElements.DropdownMenuAction.AlwaysEnabled);
             }
-
-            if (includeCustomSlot)
-            {
-                menu.AppendSeparator("");
-                menu.AppendAction(CustomChoiceLabel, _ => onPickCustom(), UnityEngine.UIElements.DropdownMenuAction.AlwaysEnabled);
-            }
         }
 
         public static void PopulateGenericMenuCreateNodes(
             GenericMenu menu,
             Action<string> onPickType,
-            Action onPickCustom,
-            bool includeCustomSlot,
             IReadOnlyList<BTEditorTypeEntry> entries = null)
         {
             entries ??= GetEditorTypeEntries();
             foreach (var e in entries)
                 menu.AddItem(new GUIContent(FullMenuPath(e)), false, () => onPickType(e.TypeId));
-
-            if (includeCustomSlot)
-            {
-                menu.AddSeparator("");
-                menu.AddItem(new GUIContent(CustomChoiceLabel), false, () => onPickCustom());
-            }
         }
     }
 }

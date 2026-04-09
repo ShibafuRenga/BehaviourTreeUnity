@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using Newtonsoft.Json.Linq;
 using Shibafu.BehaviourTree;
+using UnityEngine;
 
 namespace Shibafu.BehaviourTree.Serialization
 {
@@ -18,6 +19,18 @@ namespace Shibafu.BehaviourTree.Serialization
 
         private readonly Dictionary<string, Func<BTContext, bool>> _conditions =
             new Dictionary<string, Func<BTContext, bool>>(StringComparer.Ordinal);
+
+        /// <summary>
+        /// 非空时，发布包中 <see cref="BTNodeReferenceBinder"/> 将 data 里的引用字符串按 <see cref="Transform.Find"/> 解析为该 Transform 下的相对路径（在 <c>btref:</c> 与 GlobalObjectId 之后尝试）。
+        /// 一般由 <see cref="BehaviourTreeRunner"/> 设为自身或场景根。
+        /// </summary>
+        public Transform UnityObjectResolveRoot { get; set; }
+
+        /// <summary>
+        /// 非空时，将 JSON 中 <c>btref:&lt;bindingId&gt;</c> 解析为登记在 <see cref="BTDefinitionScriptableObject"/> 上的引用（发布包可用）。
+        /// 由 <see cref="BTDefinitionScriptableObject.EnsureBindingResolverOnContext"/> 或自定义逻辑设置。
+        /// </summary>
+        public Func<string, UnityEngine.Object> TryGetBoundObjectById { get; set; }
 
         public BTDefinitionLoadContext(bool registerBuiltInNodeTypes = false)
         {
@@ -126,6 +139,7 @@ namespace Shibafu.BehaviourTree.Serialization
             ctx.RegisterNodeType("action", BuildAction);
             ctx.RegisterNodeType("condition", BuildCondition);
             BTAttributedActionRegistration.RegisterAll(ctx);
+            BTAttributedConditionNodeRegistration.RegisterAll(ctx);
         }
 
         private static BTNode BuildSequence(BTNodeDefinition def, BTDefinitionLoadContext _, IReadOnlyList<BTNode> children)

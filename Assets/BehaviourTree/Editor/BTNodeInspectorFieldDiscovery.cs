@@ -86,7 +86,7 @@ namespace Shibafu.BehaviourTree.Editor
                 for (var i = chunk.Count - 1; i >= 0; i--)
                 {
                     var k = GetJsonKey(chunk[i]);
-                    if (!seenKeys.Add(k))
+                    if (!seenKeys.Add(k)) // 去重？
                         chunk.RemoveAt(i);
                 }
 

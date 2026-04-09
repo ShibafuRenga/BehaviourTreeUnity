@@ -1,10 +1,11 @@
 using Newtonsoft.Json.Linq;
+using Shibafu.BehaviourTree.Serialization;
 
 namespace Shibafu.BehaviourTree
 {
     /// <summary>
     /// 叶子动作基类。从 JSON 加载时：反射无参构造 → <see cref="InitFromJson"/> → 再由加载器设置 <see cref="BTNode.Name"/>。
-    /// 带 <see cref="BTNodeInspectorFieldAttribute"/> 的字段或属性由 <see cref="BTNodeReferenceBinder"/> 按成员名从 <c>data</c> 自动绑定（引用、字符串、数值、枚举等）。
+    /// 带 <see cref="BTNodeInspectorFieldAttribute"/> 的字段或属性由 <see cref="BTNodeReferenceBinder"/> 按成员名从 <c>data</c> 自动绑定（<c>btref:</c>、GlobalObjectId、路径、标量等）。
     /// 委托型动作用 <see cref="BTDelegateAction"/>；新类型继承本类并加 <see cref="BTNodeTypeAttribute"/> 即可被自动注册，无需改 <c>BTDefinitionLoadContext</c>。
     /// </summary>
     public abstract class BTAction : BTNode
@@ -39,11 +40,11 @@ namespace Shibafu.BehaviourTree
         protected abstract BTStatus OnTick(BTContext context);
 
         /// <summary>
-        /// 从 <c>data</c> 读取参数。默认会绑定带 <see cref="BTNodeInspectorFieldAttribute"/> 的字段/属性；重写时请先 <c>base.InitFromJson(data)</c>。
+        /// 从 <c>data</c> 读取参数。默认会绑定带 <see cref="BTNodeInspectorFieldAttribute"/> 的字段/属性；重写时请先 <c>base.InitFromJson(data, loadContext)</c>。
         /// </summary>
-        public virtual void InitFromJson(JObject data)
+        public virtual void InitFromJson(JObject data, BTDefinitionLoadContext loadContext = null)
         {
-            BTNodeReferenceBinder.ApplyFromJson(this, data);
+            BTNodeReferenceBinder.ApplyFromJson(this, data, loadContext);
         }
 
         public override void Reset()

@@ -98,15 +98,23 @@ namespace Shibafu.BehaviourTree.Editor
         private static BTNodeDefinition BuildDefinition(BTGraphNode node)
         {
             var type = node.EffectiveType;
-            var children = node.OutputPort == null
-                ? new List<BTNodeDefinition>()
-                : node.OutputPort.connections
+            var children = new List<BTNodeDefinition>();
+            if (node.OutputPort != null)
+            {
+                var ordered = node.OutputPort.connections
                     .Select(c => c.input.node as BTGraphNode)
                     .Where(n => n != null)
                     .OrderBy(n => n.GetPosition().yMin)
                     .ThenBy(n => n.GetPosition().xMin)
-                    .Select(n => BuildDefinition(n))
                     .ToList();
+                var seenChild = new HashSet<BTGraphNode>();
+                foreach (var child in ordered)
+                {
+                    if (!seenChild.Add(child))
+                        continue;
+                    children.Add(BuildDefinition(child));
+                }
+            }
 
             if (string.Equals(type, "sequence", System.StringComparison.Ordinal) ||
                 string.Equals(type, "selector", System.StringComparison.Ordinal))

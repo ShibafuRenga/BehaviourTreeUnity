@@ -23,7 +23,6 @@ namespace Shibafu.BehaviourTree.Editor
         private readonly List<string> _choiceLabels;
         private readonly List<string> _typeIds;
         private readonly int _defaultSequenceIndex;
-        private int CustomSlotIndex => _choiceLabels.Count - 1;
 
         private readonly Port _inputPort;
         private Port _outputPort;
@@ -31,7 +30,6 @@ namespace Shibafu.BehaviourTree.Editor
         /// <summary>下拉项下标，与 <see cref="BTEditorNodeTypeDiscovery.BuildChoiceLists"/> 一致。</summary>
         private int _typeChoiceIndex;
 
-        private string _customTypeText = "";
         private string _nodeName = "";
         private string _dataJsonText = "";
 
@@ -59,7 +57,7 @@ namespace Shibafu.BehaviourTree.Editor
             _typeIds = typeIds;
 
             var defaultIndex = 0;
-            for (var i = 0; i < _typeIds.Count - 1; i++)
+            for (var i = 0; i < _typeIds.Count; i++)
             {
                 if (_typeIds[i] != null && _typeIds[i].Equals("sequence", StringComparison.Ordinal))
                 {
@@ -92,18 +90,6 @@ namespace Shibafu.BehaviourTree.Editor
             {
                 var n = _choiceLabels.Count;
                 _typeChoiceIndex = n == 0 ? 0 : Mathf.Clamp(value, 0, n - 1);
-                SyncTitleWithNameOrType();
-                RequestRefreshChildPort();
-            }
-        }
-
-        /// <summary>自定义 type 文本（仅在选择「自定义类型…」时有效）。</summary>
-        public string CustomTypeText
-        {
-            get => _customTypeText ?? "";
-            set
-            {
-                _customTypeText = value ?? "";
                 SyncTitleWithNameOrType();
                 RequestRefreshChildPort();
             }
@@ -274,20 +260,10 @@ namespace Shibafu.BehaviourTree.Editor
             return Mathf.Clamp(_typeChoiceIndex, 0, n - 1);
         }
 
-        private bool IsCustomTypeSelected() => SelectedTypeIndex() == CustomSlotIndex;
-
         public string EffectiveType
         {
             get
             {
-                if (IsCustomTypeSelected())
-                {
-                    var c = _customTypeText?.Trim();
-                    if (!string.IsNullOrEmpty(c))
-                        return c;
-                    return "sequence";
-                }
-
                 var idx = SelectedTypeIndex();
                 var id = _typeIds[idx];
                 return !string.IsNullOrEmpty(id) ? id : FirstRegisteredTypeId() ?? "sequence";
@@ -308,12 +284,7 @@ namespace Shibafu.BehaviourTree.Editor
         }
 
         /// <summary>保存前校验；通过返回 null。</summary>
-        public string ValidateForSave()
-        {
-            if (IsCustomTypeSelected() && string.IsNullOrWhiteSpace(_customTypeText))
-                return $"选择「{BTEditorNodeTypeDiscovery.CustomTypeMenuLabel}」时必须填写「自定义 type」。";
-            return null;
-        }
+        public string ValidateForSave() => null;
 
         /// <summary>从已知 typeId 设置（用于拖线创建）。</summary>
         public void ApplySpawnPresetType(string typeId)
@@ -323,19 +294,10 @@ namespace Shibafu.BehaviourTree.Editor
             RequestRefreshChildPort();
         }
 
-        /// <summary>拖线创建时切到「自定义」槽位。</summary>
-        public void ApplySpawnCustomSlot()
-        {
-            _typeChoiceIndex = CustomSlotIndex;
-            _customTypeText = "";
-            SyncTitleWithNameOrType();
-            RequestRefreshChildPort();
-        }
-
         private void ApplyTypeIdString(string t)
         {
             var idx = -1;
-            for (var i = 0; i < _typeIds.Count - 1; i++)
+            for (var i = 0; i < _typeIds.Count; i++)
             {
                 var id = _typeIds[i];
                 if (id != null && id.Equals(t, StringComparison.Ordinal))
@@ -346,14 +308,12 @@ namespace Shibafu.BehaviourTree.Editor
             }
 
             if (idx >= 0)
-            {
                 _typeChoiceIndex = idx;
-                _customTypeText = "";
-            }
             else
             {
-                _typeChoiceIndex = CustomSlotIndex;
-                _customTypeText = t;
+                Debug.LogWarning(
+                    $"[BehaviourTree] 节点 type「{t}」不在编辑器已扫描类型中，已回退为 sequence（可改下拉或手改 JSON）。");
+                _typeChoiceIndex = _defaultSequenceIndex;
             }
         }
 
@@ -395,7 +355,7 @@ namespace Shibafu.BehaviourTree.Editor
             }
         }
 
-        /// <summary>属性面板用：与 <see cref="TypeChoiceIndex"/> 对应的下拉标签列表（含自定义项）。</summary>
+        /// <summary>属性面板用：与 <see cref="TypeChoiceIndex"/> 对应的下拉标签列表。</summary>
         public IReadOnlyList<string> EditorTypeChoiceLabels => _choiceLabels;
     }
 }

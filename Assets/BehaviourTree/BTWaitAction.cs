@@ -1,5 +1,6 @@
 using System;
 using Newtonsoft.Json.Linq;
+using Shibafu.BehaviourTree.Serialization;
 using UnityEngine;
 
 namespace Shibafu.BehaviourTree
@@ -28,9 +29,9 @@ namespace Shibafu.BehaviourTree
             unscaled = unscaledTime;
         }
 
-        public override void InitFromJson(JObject data)
+        public override void InitFromJson(JObject data, BTDefinitionLoadContext loadContext = null)
         {
-            base.InitFromJson(data);
+            base.InitFromJson(data, loadContext);
             if (data == null)
                 return;
             if (data["seconds"] == null && data["duration"] != null)

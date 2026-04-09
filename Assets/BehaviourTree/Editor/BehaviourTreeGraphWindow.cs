@@ -137,7 +137,7 @@ namespace Shibafu.BehaviourTree.Editor
         private void ResetInspectorPanel()
         {
             _inspectorBoundCache = null;
-            _inspectorPanel?.Bind(null);
+            _inspectorPanel?.Bind(null, null);
         }
 
         private void PollInspectorFromGraphSelection()
@@ -165,7 +165,7 @@ namespace Shibafu.BehaviourTree.Editor
             if (next != _inspectorBoundCache)
             {
                 _inspectorBoundCache = next;
-                _inspectorPanel.Bind(next);
+                _inspectorPanel.Bind(next, _boundDefinition);
             }
         }
 
@@ -190,9 +190,7 @@ namespace Shibafu.BehaviourTree.Editor
             var addMenu = new ToolbarMenu { text = "添加节点" };
             BTEditorNodeTypeDiscovery.AppendCreateNodeActions(
                 addMenu.menu,
-                tid => SpawnAtViewCenter(tid, false),
-                () => SpawnAtViewCenter(null, true),
-                includeCustomSlot: true);
+                SpawnAtViewCenter);
             toolbar.Add(addMenu);
 
             rootVisualElement.Add(toolbar);
@@ -220,7 +218,7 @@ namespace Shibafu.BehaviourTree.Editor
             rootVisualElement.Add(body);
 
             _inspectorBoundCache = null;
-            _inspectorPanel.Bind(null);
+            _inspectorPanel.Bind(null, null);
             _inspectorSelectionPoll = _graphView.schedule.Execute(PollInspectorFromGraphSelection).Every(30);
 
             if (_boundDefinition != null)
@@ -311,7 +309,9 @@ namespace Shibafu.BehaviourTree.Editor
                 if (addedIds)
                 {
                     Undo.RecordObject(_boundDefinition, "Assign Behaviour Tree node ids");
-                    _boundDefinition.Json = BTDefinitionIO.SerializeDocument(doc);
+                    var serialized = BTDefinitionIO.SerializeDocument(doc);
+                    _boundDefinition.Json = serialized;
+                    _boundDefinition.EditorPruneUnusedObjectBindings(serialized);
                     EditorUtility.SetDirty(_boundDefinition);
                 }
 
@@ -402,19 +402,21 @@ namespace Shibafu.BehaviourTree.Editor
             }
 
             Undo.RecordObject(_boundDefinition, "Save Behaviour Tree");
-            _boundDefinition.Json = BTDefinitionIO.SerializeDocument(doc);
+            var json = BTDefinitionIO.SerializeDocument(doc);
+            _boundDefinition.Json = json;
+            _boundDefinition.EditorPruneUnusedObjectBindings(json);
             EditorUtility.SetDirty(_boundDefinition);
             AssetDatabase.SaveAssets();
         }
 
-        private void SpawnAtViewCenter(string presetTypeId, bool customSlot)
+        private void SpawnAtViewCenter(string presetTypeId)
         {
             var gv = _graphView;
             var r = gv.contentViewContainer.layout;
             var pos = r.width > 16f && r.height > 16f
                 ? new Vector2(r.width * 0.5f - BTGraphNode.DefaultWidth * 0.5f, r.height * 0.5f)
                 : new Vector2(400f, 200f);
-            gv.CreateNodeAt(pos, customSlot ? null : presetTypeId, customSlot);
+            gv.CreateNodeAt(pos, presetTypeId);
         }
     }
 }

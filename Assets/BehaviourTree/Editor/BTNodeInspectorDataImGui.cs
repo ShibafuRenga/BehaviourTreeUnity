@@ -1,7 +1,9 @@
 using System;
+using System.Linq;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Shibafu.BehaviourTree;
+using Shibafu.BehaviourTree.Serialization;
 using UnityEditor;
 using UnityEngine;
 using Object = UnityEngine.Object;
@@ -13,7 +15,8 @@ namespace Shibafu.BehaviourTree.Editor
     /// </summary>
     internal static class BTNodeInspectorDataImGui
     {
-        internal static void Draw(string typeId, ref string dataJsonText, out bool changed)
+        internal static void Draw(string typeId, ref string dataJsonText, out bool changed,
+            BTDefinitionScriptableObject definitionForBindings = null)
         {
             changed = false;
             var clr = BTNodeInspectorFieldDiscovery.ResolveClrType(typeId);
@@ -26,6 +29,16 @@ namespace Shibafu.BehaviourTree.Editor
                 if (clr != null)
                     EditorGUILayout.HelpBox("此类型未声明 BTNodeInspectorField；data 需通过代码或其它工具维护。", MessageType.Info);
                 return;
+            }
+
+            if (definitionForBindings == null &&
+                auto.Any(b => typeof(Object).IsAssignableFrom(b.ValueType) ||
+                              b.ValueType == typeof(string) && b.Attr.ObjectReferenceType != null &&
+                              typeof(Object).IsAssignableFrom(b.Attr.ObjectReferenceType)))
+            {
+                EditorGUILayout.HelpBox(
+                    "未打开绑定定义资产时，引用仅写入 GlobalObjectId（发布包无法解析）。打开图并绑定 .asset 后保存，将使用 btref: 并登记到定义资产。",
+                    MessageType.Info);
             }
 
             JObject root;
@@ -50,7 +63,7 @@ namespace Shibafu.BehaviourTree.Editor
             foreach (var b in auto)
             {
                 var label = BTNodeInspectorFieldDiscovery.GetGuiLabel(b);
-                DrawBinding(root, b, label);
+                DrawBinding(root, b, label, definitionForBindings);
             }
 
             if (EditorGUI.EndChangeCheck())
@@ -72,7 +85,8 @@ namespace Shibafu.BehaviourTree.Editor
             throw new JsonException("data 必须是 JSON 对象 { ... }。");
         }
 
-        private static void DrawBinding(JObject root, BTNodeInspectorFieldDiscovery.Binding b, string label)
+        private static void DrawBinding(JObject root, BTNodeInspectorFieldDiscovery.Binding b, string label,
+            BTDefinitionScriptableObject definitionForBindings)
         {
             var key = BTNodeInspectorFieldDiscovery.GetJsonKey(b);
             var t = b.ValueType;
@@ -82,7 +96,7 @@ namespace Shibafu.BehaviourTree.Editor
                 if (b.Attr.ObjectReferenceType != null &&
                     typeof(Object).IsAssignableFrom(b.Attr.ObjectReferenceType))
                 {
-                    DrawUnityObjectField(root, key, label, b.Attr.ObjectReferenceType);
+                    DrawUnityObjectField(root, key, label, b.Attr.ObjectReferenceType, definitionForBindings);
                     return;
                 }
 
@@ -155,7 +169,7 @@ namespace Shibafu.BehaviourTree.Editor
 
             if (typeof(Object).IsAssignableFrom(t))
             {
-                DrawUnityObjectField(root, key, label, t);
+                DrawUnityObjectField(root, key, label, t, definitionForBindings);
                 return;
             }
 
@@ -188,16 +202,29 @@ namespace Shibafu.BehaviourTree.Editor
             return char.ToLowerInvariant(name[0]) + name.Substring(1);
         }
 
-        private static void DrawUnityObjectField(JObject root, string key, string label, Type objectType)
+        private static void DrawUnityObjectField(JObject root, string key, string label, Type objectType,
+            BTDefinitionScriptableObject definitionForBindings)
         {
             var idStr = root[key]?.Type == JTokenType.String ? root[key].Value<string>() : null;
             Object obj = null;
-            if (!string.IsNullOrEmpty(idStr) && GlobalObjectId.TryParse(idStr, out var gid))
+            if (!string.IsNullOrEmpty(idStr))
             {
-                var ids = new[] { gid };
-                var objs = new Object[1];
-                GlobalObjectId.GlobalObjectIdentifiersToObjectsSlow(ids, objs);
-                obj = objs[0];
+                if (definitionForBindings != null &&
+                    idStr.StartsWith(BTDefinitionScriptableObject.ObjectBindingTokenPrefix,
+                        StringComparison.OrdinalIgnoreCase))
+                {
+                    var bid = idStr.Substring(BTDefinitionScriptableObject.ObjectBindingTokenPrefix.Length).Trim();
+                    if (definitionForBindings.TryGetBoundObjectByBindingId(bid, out var bound))
+                        obj = bound;
+                }
+
+                if (obj == null && GlobalObjectId.TryParse(idStr, out var gid))
+                {
+                    var ids = new[] { gid };
+                    var objs = new Object[1];
+                    GlobalObjectId.GlobalObjectIdentifiersToObjectsSlow(ids, objs);
+                    obj = objs[0];
+                }
             }
 
             if (obj != null && objectType != typeof(Object) && !objectType.IsInstanceOfType(obj))
@@ -210,14 +237,21 @@ namespace Shibafu.BehaviourTree.Editor
 
             if (next == null)
             {
+                if (definitionForBindings != null && !string.IsNullOrEmpty(idStr))
+                    definitionForBindings.EditorRemoveObjectBinding(idStr);
                 root.Remove(key);
                 return;
             }
 
-            var objsIn = new[] { next };
-            var idsOut = new GlobalObjectId[1];
-            GlobalObjectId.GetGlobalObjectIdsSlow(objsIn, idsOut);
-            root[key] = idsOut[0].ToString();
+            if (definitionForBindings != null)
+                root[key] = definitionForBindings.EditorAssignObjectBinding(next, idStr);
+            else
+            {
+                var objsIn = new[] { next };
+                var idsOut = new GlobalObjectId[1];
+                GlobalObjectId.GetGlobalObjectIdsSlow(objsIn, idsOut);
+                root[key] = idsOut[0].ToString();
+            }
         }
     }
 }

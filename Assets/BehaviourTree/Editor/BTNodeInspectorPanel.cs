@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Shibafu.BehaviourTree.Serialization;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.UIElements;
@@ -11,10 +12,10 @@ namespace Shibafu.BehaviourTree.Editor
     public sealed class BTNodeInspectorPanel : VisualElement
     {
         private BTGraphNode _bound;
+        private BTDefinitionScriptableObject _definitionForBindings;
 
         private readonly Label _headerLabel;
         private readonly DropdownField _typeDropdown;
-        private readonly TextField _customTypeField;
         private readonly TextField _nameField;
         private readonly IMGUIContainer _dataImGui;
         private readonly Label _idLabel;
@@ -26,9 +27,6 @@ namespace Shibafu.BehaviourTree.Editor
             BTEditorNodeTypeDiscovery.BuildChoiceLists(out var labels, out _);
             _typeDropdown = new DropdownField("类型", new List<string>(labels), 0);
             _typeDropdown.RegisterValueChangedCallback(_ => OnTypeChanged());
-
-            _customTypeField = new TextField("自定义 type");
-            _customTypeField.RegisterValueChangedCallback(_ => OnCustomTypeChanged());
 
             _nameField = new TextField("名称");
             _nameField.RegisterValueChangedCallback(_ => OnNameChanged());
@@ -55,22 +53,21 @@ namespace Shibafu.BehaviourTree.Editor
             Add(_headerLabel);
             Add(hint);
             Add(_typeDropdown);
-            Add(_customTypeField);
             Add(_nameField);
             Add(_dataImGui);
             Add(_idLabel);
 
-            Bind(null);
+            Bind(null, null);
         }
 
-        public void Bind(BTGraphNode node)
+        public void Bind(BTGraphNode node, BTDefinitionScriptableObject definitionForBindings = null)
         {
             _bound = node;
+            _definitionForBindings = definitionForBindings;
             var hint = this.Q<Label>("bt-inspector-hint");
             var editing = node != null;
 
             _typeDropdown.SetEnabled(editing);
-            _customTypeField.SetEnabled(editing);
             _nameField.SetEnabled(editing);
             _dataImGui.SetEnabled(editing);
 
@@ -92,26 +89,12 @@ namespace Shibafu.BehaviourTree.Editor
 
             var idx = Mathf.Clamp(node.TypeChoiceIndex, 0, _typeDropdown.choices.Count - 1);
             _typeDropdown.SetValueWithoutNotify(_typeDropdown.choices[idx]);
-            _customTypeField.SetValueWithoutNotify(node.CustomTypeText);
             _nameField.SetValueWithoutNotify(node.NodeNameText);
 
             _headerLabel.text = $"节点 — {node.title}";
             _idLabel.text = $"id: {node.DebugNodeId}";
 
-            RefreshCustomVisibility();
             _dataImGui.MarkDirtyRepaint();
-        }
-
-        private void RefreshCustomVisibility()
-        {
-            if (_bound == null)
-            {
-                _customTypeField.style.display = DisplayStyle.None;
-                return;
-            }
-
-            var isCustom = _bound.TypeChoiceIndex == _typeDropdown.choices.Count - 1;
-            _customTypeField.style.display = isCustom ? DisplayStyle.Flex : DisplayStyle.None;
         }
 
         private void OnTypeChanged()
@@ -119,16 +102,6 @@ namespace Shibafu.BehaviourTree.Editor
             if (_bound == null)
                 return;
             _bound.TypeChoiceIndex = _typeDropdown.index;
-            RefreshCustomVisibility();
-            _headerLabel.text = $"节点 — {_bound.title}";
-            _dataImGui.MarkDirtyRepaint();
-        }
-
-        private void OnCustomTypeChanged()
-        {
-            if (_bound == null)
-                return;
-            _bound.CustomTypeText = _customTypeField.value;
             _headerLabel.text = $"节点 — {_bound.title}";
             _dataImGui.MarkDirtyRepaint();
         }
@@ -147,7 +120,7 @@ namespace Shibafu.BehaviourTree.Editor
                 return;
 
             var json = _bound.DataJsonText ?? "";
-            BTNodeInspectorDataImGui.Draw(_bound.EffectiveType, ref json, out var changed);
+            BTNodeInspectorDataImGui.Draw(_bound.EffectiveType, ref json, out var changed, _definitionForBindings);
             if (changed)
                 _bound.DataJsonText = json;
         }

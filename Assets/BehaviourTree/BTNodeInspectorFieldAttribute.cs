@@ -22,7 +22,7 @@ namespace Shibafu.BehaviourTree
         public string Label { get; set; }
 
         /// <summary>
-        /// 字段类型为 <see cref="string"/> 时使用：在面板中显示为 ObjectField，JSON 中仍存 GlobalObjectId 字符串。
+        /// 字段类型为 <see cref="string"/> 时使用：在面板中显示为 ObjectField；绑定定义资产时 JSON 为 <c>btref:</c>，否则为 GlobalObjectId。
         /// </summary>
         public Type ObjectReferenceType { get; set; }
     }

@@ -19,6 +19,11 @@ namespace Shibafu.BehaviourTree
         [SerializeField]
         private bool _autoTick = true;
 
+        [Tooltip(
+            "未使用 btref: 时，解析相对层级路径的 Transform 根（Transform.Find）。为空则用本物体 Transform。场景引用请优先在定义资产的 Object Bindings 中登记（图编辑器绑定 SO）。")]
+        [SerializeField]
+        private Transform _objectReferenceRoot;
+
         private BehaviourTree _tree;
         private BTContext _context;
         private readonly Dictionary<string, BTStatus> _runtimeNodeStatuses = new Dictionary<string, BTStatus>();
@@ -55,8 +60,15 @@ namespace Shibafu.BehaviourTree
         }
 
         /// <summary>从资产新建一棵行为树（不写入本组件缓存，与 <see cref="RuntimeTree"/> 无关）。</summary>
-        public BehaviourTree CreateRuntimeTree(BTDefinitionLoadContext context = null) =>
-            _definition != null ? _definition.CreateRuntimeTree(context) : null;
+        public BehaviourTree CreateRuntimeTree(BTDefinitionLoadContext context = null)
+        {
+            if (_definition == null)
+                return null;
+            context ??= BTDefinitionLoadContext.CreateWithBuiltIns();
+            ApplyResolveRoot(context);
+            _definition.EnsureBindingResolverOnContext(context);
+            return BTDefinitionLoader.LoadTree(_definition.Json, context);
+        }
 
         /// <summary>手动执行一次 Tick（与自动 Tick 共用 <see cref="Context"/>）。</summary>
         public BTStatus TickOnce()
@@ -105,12 +117,22 @@ namespace Shibafu.BehaviourTree
 
             try
             {
-                _tree = _definition.CreateRuntimeTree();
+                var ctx = BTDefinitionLoadContext.CreateWithBuiltIns();
+                ApplyResolveRoot(ctx);
+                _definition.EnsureBindingResolverOnContext(ctx);
+                _tree = BTDefinitionLoader.LoadTree(json, ctx);
             }
             catch (Exception ex)
             {
                 Debug.LogError($"BehaviourTreeRunner on '{name}': 无法从定义构建行为树 — {ex.Message}", this);
             }
+        }
+
+        private void ApplyResolveRoot(BTDefinitionLoadContext ctx)
+        {
+            if (ctx == null)
+                return;
+            ctx.UnityObjectResolveRoot = _objectReferenceRoot != null ? _objectReferenceRoot : transform;
         }
     }
 }

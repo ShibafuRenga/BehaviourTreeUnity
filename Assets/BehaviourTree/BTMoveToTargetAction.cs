@@ -1,11 +1,12 @@
 using Newtonsoft.Json.Linq;
+using Shibafu.BehaviourTree.Serialization;
 using UnityEngine;
 
 namespace Shibafu.BehaviourTree
 {
     /// <summary>
     /// 在 <see cref="OnStart"/> 记录起点/终点，随后在 <see cref="OnTick"/> 内按 <c>duration</c> 秒插值移动 <c>subject</c> 到 <c>target</c> 世界坐标。
-    /// 引用在代码中为 <see cref="Transform"/>；序列化为 GlobalObjectId（编辑器下加载时由绑定器解析）。
+    /// 引用为 <see cref="Transform"/>；推荐在定义 SO 上登记后 JSON 使用 <c>btref:</c>（发布包可用）；或编辑器 GlobalObjectId；或相对 <see cref="BTDefinitionLoadContext.UnityObjectResolveRoot"/> 的路径。
     /// </summary>
     [BTNodeType("moveToTarget", "移动到目标 Move To Target", EditorMenuPath = "Leaf")]
     public sealed class BTMoveToTargetAction : BTAction
@@ -27,9 +28,9 @@ namespace Shibafu.BehaviourTree
         {
         }
 
-        public override void InitFromJson(JObject data)
+        public override void InitFromJson(JObject data, BTDefinitionLoadContext loadContext = null)
         {
-            base.InitFromJson(data);
+            base.InitFromJson(data, loadContext);
             duration = Mathf.Max(0f, duration);
         }
 
@@ -38,7 +39,7 @@ namespace Shibafu.BehaviourTree
             if (subject == null || this.target == null)
             {
                 Debug.LogWarning(
-                    "[moveToTarget] subject 或 target 未解析：请在编辑器中绑定场景引用（GlobalObjectId）。");
+                    "[moveToTarget] subject 或 target 未解析：请在定义资产上登记 btref，或配置 Runner 的引用根与层级路径。");
                 return;
             }
 

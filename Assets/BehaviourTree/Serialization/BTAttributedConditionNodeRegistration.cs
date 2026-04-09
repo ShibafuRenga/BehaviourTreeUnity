@@ -8,13 +8,13 @@ using Shibafu.BehaviourTree;
 namespace Shibafu.BehaviourTree.Serialization
 {
     /// <summary>
-    /// 扫描带 <see cref="BTNodeTypeAttribute"/> 的 <see cref="BTAction"/> 具体子类（需 public 无参构造），并注册到上下文（不覆盖已存在的 typeId，例如 <c>action</c>）。
+    /// 扫描带 <see cref="BTNodeTypeAttribute"/> 的 <see cref="BTSimpleConditionNode"/> 具体子类（需 public 无参构造），并注册到上下文（不覆盖已存在的 typeId）。
     /// </summary>
-    internal static class BTAttributedActionRegistration
+    internal static class BTAttributedConditionNodeRegistration
     {
         internal static void RegisterAll(BTDefinitionLoadContext ctx)
         {
-            foreach (var (typeId, clrType) in DiscoverAttributedActionTypes())
+            foreach (var (typeId, clrType) in DiscoverAttributedConditionTypes())
             {
                 if (ctx.IsNodeTypeRegistered(typeId))
                     continue;
@@ -22,11 +22,11 @@ namespace Shibafu.BehaviourTree.Serialization
                 var capturedType = clrType;
                 ctx.RegisterNodeType(typeId,
                     (def, loadContext, children) =>
-                        BuildAttributedAction(capturedType, def, children, loadContext));
+                        BuildAttributedCondition(capturedType, def, children, loadContext));
             }
         }
 
-        private static BTNode BuildAttributedAction(Type clrType, BTNodeDefinition def,
+        private static BTNode BuildAttributedCondition(Type clrType, BTNodeDefinition def,
             IReadOnlyList<BTNode> children, BTDefinitionLoadContext loadContext)
         {
             if (children.Count != 0)
@@ -40,18 +40,18 @@ namespace Shibafu.BehaviourTree.Serialization
             catch (Exception ex)
             {
                 throw new InvalidOperationException(
-                    $"Cannot create instance of {clrType.Name}: public parameterless constructor is required for JSON-loaded actions.",
+                    $"Cannot create instance of {clrType.Name}: public parameterless constructor is required for JSON-loaded condition nodes.",
                     ex);
             }
 
-            if (raw is not BTAction action)
-                throw new InvalidOperationException($"{clrType.Name} must inherit {nameof(BTAction)}.");
+            if (raw is not BTSimpleConditionNode node)
+                throw new InvalidOperationException($"{clrType.Name} must inherit {nameof(BTSimpleConditionNode)}.");
 
-            action.InitFromJson(def.Data ?? new JObject(), loadContext);
-            return action;
+            node.InitFromJson(def.Data ?? new JObject(), loadContext);
+            return node;
         }
 
-        private static IEnumerable<(string TypeId, Type ClrType)> DiscoverAttributedActionTypes()
+        private static IEnumerable<(string TypeId, Type ClrType)> DiscoverAttributedConditionTypes()
         {
             var seen = new HashSet<string>(StringComparer.Ordinal);
             foreach (var asm in GetCandidateAssemblies())
@@ -72,9 +72,9 @@ namespace Shibafu.BehaviourTree.Serialization
 
                 foreach (var t in types)
                 {
-                    if (t == null || t.IsAbstract || !typeof(BTAction).IsAssignableFrom(t))
+                    if (t == null || t.IsAbstract || !typeof(BTSimpleConditionNode).IsAssignableFrom(t))
                         continue;
-                    if (t == typeof(BTAction) || t == typeof(BTDelegateAction))
+                    if (t == typeof(BTSimpleConditionNode))
                         continue;
                     if (t.GetConstructor(Type.EmptyTypes) == null)
                         continue;
@@ -97,7 +97,7 @@ namespace Shibafu.BehaviourTree.Serialization
 
         private static IEnumerable<Assembly> GetCandidateAssemblies()
         {
-            var core = typeof(BTAction).Assembly;
+            var core = typeof(BTSimpleConditionNode).Assembly;
             yield return core;
 
             foreach (var asm in AppDomain.CurrentDomain.GetAssemblies())

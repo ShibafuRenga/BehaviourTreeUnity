@@ -27,7 +27,7 @@ namespace Shibafu.BehaviourTree.Editor
             this.AddManipulator(new ContentZoomer());
             this.AddManipulator(new ContentDragger());
             this.AddManipulator(new SelectionDragger());
-            this.AddManipulator(new RectangleSelector());
+            this.AddManipulator(new BTRectangleSelector());
 
             this.AddManipulator(new ContextualMenuManipulator(BuildBackgroundMenu));
 
@@ -39,6 +39,31 @@ namespace Shibafu.BehaviourTree.Editor
         {
             if (edge == null || edge.input == null || edge.output == null)
                 return;
+
+            // 与 Port 默认 DefaultEdgeConnectorListener 一致：Single 端口上新连线前删掉旧边。
+            // 否则 m_Connections 里会叠多条边，保存时同一子节点会在 children 里出现多次。
+            var toDelete = new List<GraphElement>();
+            if (edge.input.capacity == Port.Capacity.Single)
+            {
+                foreach (var e in edge.input.connections.ToList())
+                {
+                    if (e != edge)
+                        toDelete.Add(e);
+                }
+            }
+
+            if (edge.output.capacity == Port.Capacity.Single)
+            {
+                foreach (var e in edge.output.connections.ToList())
+                {
+                    if (e != edge)
+                        toDelete.Add(e);
+                }
+            }
+
+            if (toDelete.Count > 0)
+                graphView.DeleteElements(toDelete);
+
             graphView.AddElement(edge);
             edge.input.Connect(edge);
             edge.output.Connect(edge);
@@ -85,14 +110,12 @@ namespace Shibafu.BehaviourTree.Editor
 
             BTEditorNodeTypeDiscovery.PopulateGenericMenuCreateNodes(
                 menu,
-                tid => ScheduleWireSpawn(anchor, fromOutput, graphLocal, tid, false),
-                () => ScheduleWireSpawn(anchor, fromOutput, graphLocal, null, true),
-                includeCustomSlot: fromOutput,
+                tid => ScheduleWireSpawn(anchor, fromOutput, graphLocal, tid),
                 entries);
             menu.ShowAsContext();
         }
 
-        private void ScheduleWireSpawn(Port anchor, bool fromOutput, Vector2 graphLocal, string typeId, bool customSlot)
+        private void ScheduleWireSpawn(Port anchor, bool fromOutput, Vector2 graphLocal, string typeId)
         {
             var epochAtSchedule = _graphContentEpoch;
             EditorApplication.delayCall += () =>
@@ -103,7 +126,7 @@ namespace Shibafu.BehaviourTree.Editor
                     return;
 
                 var spawnPos = graphLocal + new Vector2(28f, 28f);
-                var node = CreateNodeAt(spawnPos, typeId, customSlot);
+                var node = CreateNodeAt(spawnPos, typeId);
 
                 if (fromOutput)
                     ConnectPorts(anchor, node.InputPort);
@@ -189,20 +212,9 @@ namespace Shibafu.BehaviourTree.Editor
                     {
                         if (epochAtPick != _graphContentEpoch)
                             return;
-                        CreateNodeAt(spawnLocal, tid, false);
+                        CreateNodeAt(spawnLocal, tid);
                     };
-                },
-                () =>
-                {
-                    var epochAtPick = _graphContentEpoch;
-                    EditorApplication.delayCall += () =>
-                    {
-                        if (epochAtPick != _graphContentEpoch)
-                            return;
-                        CreateNodeAt(spawnLocal, null, true);
-                    };
-                },
-                includeCustomSlot: true);
+                });
         }
 
         public override List<Port> GetCompatiblePorts(Port startPort, NodeAdapter nodeAdapter)
@@ -238,8 +250,8 @@ namespace Shibafu.BehaviourTree.Editor
             }
         }
 
-        /// <param name="presetTypeId">非自定义时写入的 type；为 null 且 <paramref name="customSlot"/> 为 false 时保留节点构造默认（一般为 sequence）。</param>
-        public BTGraphNode CreateNodeAt(Vector2 graphLocalPosition, string presetTypeId = null, bool customSlot = false)
+        /// <param name="presetTypeId">为 null 或空白时保留节点构造默认（一般为 sequence）。</param>
+        public BTGraphNode CreateNodeAt(Vector2 graphLocalPosition, string presetTypeId = null)
         {
             var node = new BTGraphNode();
             node.SetPosition(new Rect(
@@ -248,9 +260,7 @@ namespace Shibafu.BehaviourTree.Editor
                 BTGraphNode.DefaultWidth,
                 BTGraphNode.CompactNodeHeight));
             AddElement(node);
-            if (customSlot)
-                node.ApplySpawnCustomSlot();
-            else if (!string.IsNullOrWhiteSpace(presetTypeId))
+            if (!string.IsNullOrWhiteSpace(presetTypeId))
                 node.ApplySpawnPresetType(presetTypeId);
             node.RefreshChildOutputPort(this);
             ClearSelection();
@@ -262,6 +272,20 @@ namespace Shibafu.BehaviourTree.Editor
         {
             if (output == null || input == null)
                 return;
+            if (input.capacity == Port.Capacity.Single)
+            {
+                var existing = input.connections.ToList();
+                if (existing.Count > 0)
+                    DeleteElements(existing);
+            }
+
+            if (output.capacity == Port.Capacity.Single)
+            {
+                var existing = output.connections.ToList();
+                if (existing.Count > 0)
+                    DeleteElements(existing);
+            }
+
             var edge = new Edge { output = output, input = input };
             output.Connect(edge);
             input.Connect(edge);

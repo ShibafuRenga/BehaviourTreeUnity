@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Reflection;
 using Newtonsoft.Json.Linq;
+using Shibafu.BehaviourTree.Serialization;
 using UnityEngine;
 using Object = UnityEngine.Object;
 
@@ -9,7 +10,7 @@ namespace Shibafu.BehaviourTree
 {
     /// <summary>
     /// 将 JSON <c>data</c> 绑定到带 <see cref="BTNodeInspectorFieldAttribute"/> 的实例字段或属性：
-    /// 键名与成员名一致；支持 <see cref="Object"/> 派生（GlobalObjectId 字符串）、<see cref="string"/>、常见值类型与枚举。
+    /// 键名与成员名一致；支持 <see cref="Object"/> 派生（<c>btref:</c>、GlobalObjectId、相对根的层级路径）、<see cref="string"/>、常见值类型与枚举。
     /// 仅当 JSON 中存在对应键时才写入；缺键则保留默认值。
     /// </summary>
     internal static class BTNodeReferenceBinder
@@ -17,12 +18,15 @@ namespace Shibafu.BehaviourTree
         private const BindingFlags MemberFlags = BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic |
                                                  BindingFlags.DeclaredOnly;
 
-        internal static void ApplyFromJson(BTAction target, JObject data)
+        internal static void ApplyFromJson(object target, JObject data, BTDefinitionLoadContext loadContext = null)
         {
             if (target == null)
                 return;
 
             data ??= new JObject();
+
+            var root = loadContext?.UnityObjectResolveRoot;
+            var tryBinding = loadContext?.TryGetBoundObjectById;
 
             var seenJsonKeys = new HashSet<string>(StringComparer.Ordinal);
             for (var walk = target.GetType();
@@ -43,7 +47,7 @@ namespace Shibafu.BehaviourTree
 
                     var ft = fi.FieldType;
                     if (typeof(Object).IsAssignableFrom(ft))
-                        TryBindUnityObjectField(target, fi, data, jsonKey);
+                        TryBindUnityObjectField(target, fi, data, jsonKey, root, tryBinding);
                     else
                         TryBindScalarField(target, fi, data, jsonKey);
                 }
@@ -67,36 +71,42 @@ namespace Shibafu.BehaviourTree
 
                     var pt = pi.PropertyType;
                     if (typeof(Object).IsAssignableFrom(pt))
-                        TryBindUnityObjectProperty(target, pi, data, jsonKey);
+                        TryBindUnityObjectProperty(target, pi, data, jsonKey, root, tryBinding);
                     else
                         TryBindScalarProperty(target, pi, data, jsonKey);
                 }
             }
         }
 
-        private static void TryBindUnityObjectField(BTAction target, FieldInfo field, JObject data, string jsonKey)
+        private static void TryBindUnityObjectField(object target, FieldInfo field, JObject data, string jsonKey,
+            Transform unityObjectResolveRoot,
+            Func<string, Object> tryGetBoundObjectById)
         {
             var idStr = data[jsonKey]?.Value<string>();
             if (string.IsNullOrWhiteSpace(idStr) ||
-                !BTUnityObjectIdResolve.TryGetUnityObject(idStr.Trim(), out var raw) ||
+                !BTUnityObjectIdResolve.TryResolveUnityObject(idStr.Trim(), unityObjectResolveRoot,
+                    tryGetBoundObjectById, out var raw) ||
                 !TryCoerceUnityObject(raw, field.FieldType, out var coerced))
                 return;
 
             field.SetValue(target, coerced);
         }
 
-        private static void TryBindUnityObjectProperty(BTAction target, PropertyInfo prop, JObject data, string jsonKey)
+        private static void TryBindUnityObjectProperty(object target, PropertyInfo prop, JObject data, string jsonKey,
+            Transform unityObjectResolveRoot,
+            Func<string, Object> tryGetBoundObjectById)
         {
             var idStr = data[jsonKey]?.Value<string>();
             if (string.IsNullOrWhiteSpace(idStr) ||
-                !BTUnityObjectIdResolve.TryGetUnityObject(idStr.Trim(), out var raw) ||
+                !BTUnityObjectIdResolve.TryResolveUnityObject(idStr.Trim(), unityObjectResolveRoot,
+                    tryGetBoundObjectById, out var raw) ||
                 !TryCoerceUnityObject(raw, prop.PropertyType, out var coerced))
                 return;
 
             prop.SetValue(target, coerced, null);
         }
 
-        private static void TryBindScalarField(BTAction target, FieldInfo field, JObject data, string jsonKey)
+        private static void TryBindScalarField(object target, FieldInfo field, JObject data, string jsonKey)
         {
             var tok = data[jsonKey];
             if (tok == null || tok.Type == JTokenType.Undefined)
@@ -115,7 +125,7 @@ namespace Shibafu.BehaviourTree
                 field.SetValue(target, value);
         }
 
-        private static void TryBindScalarProperty(BTAction target, PropertyInfo prop, JObject data, string jsonKey)
+        private static void TryBindScalarProperty(object target, PropertyInfo prop, JObject data, string jsonKey)
         {
             var tok = data[jsonKey];
             if (tok == null || tok.Type == JTokenType.Undefined)
