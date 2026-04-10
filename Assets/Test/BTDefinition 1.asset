@@ -27,20 +27,28 @@ MonoBehaviour:
     \"editorX\": 490.0,\n        \"editorY\": 105.0,\n        \"data\": {\n         
     \"unscaled\": false,\n          \"seconds\": 2.0\n        }\n      },\n     
     {\n        \"type\": \"wait\",\n        \"id\": \"a0c8c71eb89645649386f7fab8c81195\",\n       
-    \"editorX\": 490.0,\n        \"editorY\": 182.0,\n        \"data\": {\n         
+    \"editorX\": 490.0,\n        \"editorY\": 193.0,\n        \"data\": {\n         
     \"duration\": 3,\n          \"unscaled\": true,\n          \"seconds\": 3.0\n       
     }\n      },\n      {\n        \"type\": \"moveToTarget\",\n        \"id\": \"f3bada9a9d3f4027a82a648e6a05d94a__2\",\n       
-    \"editorX\": 490.0,\n        \"editorY\": 259.0,\n        \"data\": {\n         
-    \"subject\": \"GlobalObjectId_V1-2-9fc0d4010bbf28b4594072e72b8655ab-669691057-0\",\n         
-    \"target\": \"GlobalObjectId_V1-2-9fc0d4010bbf28b4594072e72b8655ab-153437452-0\",\n         
-    \"duration\": 3.0\n        }\n      },\n      {\n        \"type\": \"log\",\n       
-    \"id\": \"a75da1cd1f2f4dd286475e1edce0667d\",\n        \"editorX\": 490.0,\n       
-    \"editorY\": 359.0,\n        \"data\": {\n          \"message\": \"Hello BehaviourTree\",\n         
-    \"level\": \"warning\"\n        }\n      },\n      {\n        \"type\": \"wait\",\n       
-    \"id\": \"d5682f12e0e44744968ac7e42a67d528\",\n        \"editorX\": 490.0,\n       
-    \"editorY\": 436.0,\n        \"data\": {\n          \"seconds\": 3.0\n       
-    }\n      },\n      {\n        \"type\": \"moveToTarget\",\n        \"id\": \"9e92137f77d348559086b0a575d44822\",\n       
-    \"editorX\": 490.0,\n        \"editorY\": 532.5,\n        \"data\": {\n         
-    \"subject\": \"GlobalObjectId_V1-2-9fc0d4010bbf28b4594072e72b8655ab-669691057-0\",\n         
-    \"target\": \"GlobalObjectId_V1-2-9fc0d4010bbf28b4594072e72b8655ab-760945260-0\",\n         
-    \"duration\": 2.0\n        }\n      }\n    ]\n  }\n}"
+    \"editorX\": 490.0,\n        \"editorY\": 270.0,\n        \"data\": {\n         
+    \"subject\": \"btref:92fd7b4604cb4adc84373f70387a5975\",\n          \"target\":
+    \"btref:3da62016e57c41c18b57ab8ff2d708f0\",\n          \"duration\": 3.0\n       
+    }\n      },\n      {\n        \"type\": \"log\",\n        \"id\": \"a75da1cd1f2f4dd286475e1edce0667d\",\n       
+    \"editorX\": 490.0,\n        \"editorY\": 359.0,\n        \"data\": {\n         
+    \"message\": \"Hello BehaviourTree\",\n          \"level\": \"warning\"\n       
+    }\n      },\n      {\n        \"type\": \"wait\",\n        \"id\": \"d5682f12e0e44744968ac7e42a67d528\",\n       
+    \"editorX\": 490.0,\n        \"editorY\": 436.0,\n        \"data\": {\n         
+    \"seconds\": 3.0\n        }\n      },\n      {\n        \"type\": \"moveToTarget\",\n       
+    \"id\": \"9e92137f77d348559086b0a575d44822\",\n        \"editorX\": 490.0,\n       
+    \"editorY\": 532.5,\n        \"data\": {\n          \"subject\": \"btref:87235339f71f4d0fba85b1e6826aab01\",\n         
+    \"target\": \"btref:2495bf8715da4ba897c0a871b866b18c\",\n          \"duration\":
+    2.0\n        }\n      }\n    ]\n  }\n}"
+  _objectBindings:
+  - bindingId: 92fd7b4604cb4adc84373f70387a5975
+    target: {fileID: 0}
+  - bindingId: 3da62016e57c41c18b57ab8ff2d708f0
+    target: {fileID: 0}
+  - bindingId: 87235339f71f4d0fba85b1e6826aab01
+    target: {fileID: 0}
+  - bindingId: 2495bf8715da4ba897c0a871b866b18c
+    target: {fileID: 0}

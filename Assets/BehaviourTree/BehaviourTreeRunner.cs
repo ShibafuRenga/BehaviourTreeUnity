@@ -67,7 +67,9 @@ namespace Shibafu.BehaviourTree
             context ??= BTDefinitionLoadContext.CreateWithBuiltIns();
             ApplyResolveRoot(context);
             _definition.EnsureBindingResolverOnContext(context);
-            return BTDefinitionLoader.LoadTree(_definition.Json, context);
+            var tree = BTDefinitionLoader.LoadTree(_definition.Json, context);
+            tree?.AssignRunnerTransform(transform);
+            return tree;
         }
 
         /// <summary>手动执行一次 Tick（与自动 Tick 共用 <see cref="Context"/>）。</summary>
@@ -121,6 +123,7 @@ namespace Shibafu.BehaviourTree
                 ApplyResolveRoot(ctx);
                 _definition.EnsureBindingResolverOnContext(ctx);
                 _tree = BTDefinitionLoader.LoadTree(json, ctx);
+                _tree?.AssignRunnerTransform(transform);
             }
             catch (Exception ex)
             {

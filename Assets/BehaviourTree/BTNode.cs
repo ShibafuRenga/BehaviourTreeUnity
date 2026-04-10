@@ -1,7 +1,9 @@
+using UnityEngine;
+
 namespace Shibafu.BehaviourTree
 {
     /// <summary>
-    /// 行为树节点基类（与 Unity 组件无关，可在任意处 Tick）。
+    /// 行为树节点基类。由 <see cref="BehaviourTreeRunner"/> 构建的树会为每个节点填入 <see cref="RunnerTransform"/>；其它方式加载的树该字段可为 null。
     /// </summary>
     public abstract class BTNode
     {
@@ -9,6 +11,11 @@ namespace Shibafu.BehaviourTree
 
         /// <summary>与 JSON / 图编辑器节点 <c>id</c> 一致；用于运行时状态映射。</summary>
         public string DebugNodeId { get; set; }
+
+        /// <summary>
+        /// 当前行为树所挂载的 <see cref="BehaviourTreeRunner"/> 所在 <c>GameObject</c> 的 Transform；供节点内访问场景坐标等。非 Runner 驱动时为 null。
+        /// </summary>
+        public Transform RunnerTransform { get; set; }
 
         protected BTNode(string name = null)
         {

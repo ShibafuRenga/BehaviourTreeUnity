@@ -1,3 +1,5 @@
+using UnityEngine;
+
 namespace Shibafu.BehaviourTree
 {
     /// <summary>
@@ -15,5 +17,28 @@ namespace Shibafu.BehaviourTree
         public BTStatus Tick(BTContext context) => Root.Tick(context);
 
         public void Reset() => Root.Reset();
+
+        /// <summary>为根及以下所有节点设置 <see cref="BTNode.RunnerTransform"/>（通常为 <see cref="BehaviourTreeRunner.transform"/>）。</summary>
+        public void AssignRunnerTransform(Transform runnerTransform)
+        {
+            AssignRunnerTransformRecursive(Root, runnerTransform);
+        }
+
+        private static void AssignRunnerTransformRecursive(BTNode node, Transform runnerTransform)
+        {
+            if (node == null)
+                return;
+            node.RunnerTransform = runnerTransform;
+            switch (node)
+            {
+                case BTComposite composite:
+                    foreach (var child in composite.Children)
+                        AssignRunnerTransformRecursive(child, runnerTransform);
+                    break;
+                case BTDecorator decorator:
+                    AssignRunnerTransformRecursive(decorator.Child, runnerTransform);
+                    break;
+            }
+        }
     }
 }
