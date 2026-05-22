@@ -46,9 +46,29 @@ MonoBehaviour:
   _objectBindings:
   - bindingId: 92fd7b4604cb4adc84373f70387a5975
     target: {fileID: 0}
+    targetGlobalObjectId: GlobalObjectId_V1-2-9fc0d4010bbf28b4594072e72b8655ab-760945260-0
+    targetScenePath: Assets/Scenes/SampleScene.unity
+    targetHierarchyPath: Cube (2)
+    targetTypeName: UnityEngine.Transform, UnityEngine.CoreModule, Version=0.0.0.0,
+      Culture=neutral, PublicKeyToken=null
   - bindingId: 3da62016e57c41c18b57ab8ff2d708f0
     target: {fileID: 0}
+    targetGlobalObjectId: GlobalObjectId_V1-2-9fc0d4010bbf28b4594072e72b8655ab-669691057-0
+    targetScenePath: Assets/Scenes/SampleScene.unity
+    targetHierarchyPath: Cube
+    targetTypeName: UnityEngine.Transform, UnityEngine.CoreModule, Version=0.0.0.0,
+      Culture=neutral, PublicKeyToken=null
   - bindingId: 87235339f71f4d0fba85b1e6826aab01
     target: {fileID: 0}
+    targetGlobalObjectId: GlobalObjectId_V1-2-9fc0d4010bbf28b4594072e72b8655ab-760945260-0
+    targetScenePath: Assets/Scenes/SampleScene.unity
+    targetHierarchyPath: Cube (2)
+    targetTypeName: UnityEngine.Transform, UnityEngine.CoreModule, Version=0.0.0.0,
+      Culture=neutral, PublicKeyToken=null
   - bindingId: 2495bf8715da4ba897c0a871b866b18c
     target: {fileID: 0}
+    targetGlobalObjectId: GlobalObjectId_V1-2-9fc0d4010bbf28b4594072e72b8655ab-153437452-0
+    targetScenePath: Assets/Scenes/SampleScene.unity
+    targetHierarchyPath: Cube (1)
+    targetTypeName: UnityEngine.Transform, UnityEngine.CoreModule, Version=0.0.0.0,
+      Culture=neutral, PublicKeyToken=null

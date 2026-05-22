@@ -331,6 +331,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _definition: {fileID: 11400000, guid: 470ea226108a84e01a103d18c3194932, type: 2}
   _autoTick: 1
+  _objectReferenceRoot: {fileID: 0}
 --- !u!1 &705507993
 GameObject:
   m_ObjectHideFlags: 0
@@ -437,7 +438,6 @@ GameObject:
   - component: {fileID: 760945259}
   - component: {fileID: 760945258}
   - component: {fileID: 760945257}
-  - component: {fileID: 760945256}
   m_Layer: 0
   m_Name: Cube (2)
   m_TagString: Untagged
@@ -445,20 +445,6 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!114 &760945256
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 760945255}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: ff35b58706d5541519771156efb72389, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  _definition: {fileID: 11400000, guid: 470ea226108a84e01a103d18c3194932, type: 2}
-  _autoTick: 1
 --- !u!65 &760945257
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -636,3 +622,4 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _definition: {fileID: 11400000, guid: f006e496df0cb4f958e491afed0094e0, type: 2}
   _autoTick: 1
+  _objectReferenceRoot: {fileID: 0}

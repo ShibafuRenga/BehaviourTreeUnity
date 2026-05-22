@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using Newtonsoft.Json.Linq;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 using Object = UnityEngine.Object;
 
 namespace Shibafu.BehaviourTree.Serialization
@@ -14,6 +15,10 @@ namespace Shibafu.BehaviourTree.Serialization
     {
         public string bindingId;
         public Object target;
+        public string targetGlobalObjectId;
+        public string targetScenePath;
+        public string targetHierarchyPath;
+        public string targetTypeName;
     }
 
     /// <summary>
@@ -50,19 +55,18 @@ namespace Shibafu.BehaviourTree.Serialization
             if (ctx == null || ctx.TryGetBoundObjectById != null)
                 return;
 
-            var map = new Dictionary<string, Object>(StringComparer.Ordinal);
-            foreach (var e in _objectBindings)
-            {
-                if (e == null || string.IsNullOrEmpty(e.bindingId) || e.target == null)
-                    continue;
-                map[e.bindingId] = e.target;
-            }
-
             ctx.TryGetBoundObjectById = id =>
             {
                 if (string.IsNullOrEmpty(id))
                     return null;
-                return map.TryGetValue(id, out var o) ? o : null;
+                foreach (var e in _objectBindings)
+                {
+                    if (e == null || e.bindingId != id)
+                        continue;
+                    return ResolveObjectBindingTarget(e, ctx.UnityObjectResolveRoot);
+                }
+
+                return null;
             };
         }
 
@@ -76,7 +80,7 @@ namespace Shibafu.BehaviourTree.Serialization
             {
                 if (e == null || e.bindingId != bindingId)
                     continue;
-                obj = e.target;
+                obj = ResolveObjectBindingTarget(e, null);
                 return obj != null;
             }
 
@@ -90,7 +94,210 @@ namespace Shibafu.BehaviourTree.Serialization
             return BTDefinitionLoader.LoadTree(_json, context);
         }
 
+        private static Object ResolveObjectBindingTarget(BTObjectBindingEntry entry, Transform hierarchyRoot)
+        {
+            if (entry == null)
+                return null;
+
+            if (entry.target != null)
+                return entry.target;
+
 #if UNITY_EDITOR
+            if (!string.IsNullOrWhiteSpace(entry.targetGlobalObjectId) &&
+                UnityEditor.GlobalObjectId.TryParse(entry.targetGlobalObjectId, out var gid))
+            {
+                var ids = new[] { gid };
+                var objs = new Object[1];
+                UnityEditor.GlobalObjectId.GlobalObjectIdentifiersToObjectsSlow(ids, objs);
+                if (TryCoerceToRecordedType(objs[0], entry.targetTypeName, out var resolved))
+                    return resolved;
+            }
+#endif
+
+            if (TryResolveSceneHierarchyPath(entry.targetHierarchyPath, entry.targetScenePath,
+                    entry.targetTypeName, hierarchyRoot, out var sceneObject))
+                return sceneObject;
+
+            return null;
+        }
+
+        private static bool TryResolveSceneHierarchyPath(string hierarchyPath, string scenePath, string targetTypeName,
+            Transform hierarchyRoot, out Object obj)
+        {
+            obj = null;
+            if (string.IsNullOrWhiteSpace(hierarchyPath))
+                return false;
+
+            var segments = hierarchyPath.Split('/');
+            if (segments.Length == 0)
+                return false;
+
+            if (hierarchyRoot != null &&
+                TryFindTransformByHierarchyPath(hierarchyRoot, segments, out var rootedTransform) &&
+                TryCoerceTransformToRecordedType(rootedTransform, targetTypeName, out obj))
+                return true;
+
+            for (var i = 0; i < SceneManager.sceneCount; i++)
+            {
+                var scene = SceneManager.GetSceneAt(i);
+                if (!scene.IsValid() || !scene.isLoaded)
+                    continue;
+                if (!string.IsNullOrEmpty(scenePath) &&
+                    !string.Equals(scene.path, scenePath, StringComparison.Ordinal))
+                    continue;
+                if (TryFindTransformInScene(scene, segments, out var sceneTransform) &&
+                    TryCoerceTransformToRecordedType(sceneTransform, targetTypeName, out obj))
+                    return true;
+            }
+
+            var activeScene = SceneManager.GetActiveScene();
+            if (activeScene.IsValid() && activeScene.isLoaded &&
+                TryFindTransformInScene(activeScene, segments, out var activeSceneTransform) &&
+                TryCoerceTransformToRecordedType(activeSceneTransform, targetTypeName, out obj))
+                return true;
+
+            return false;
+        }
+
+        private static bool TryFindTransformInScene(Scene scene, string[] segments, out Transform transform)
+        {
+            transform = null;
+            var roots = scene.GetRootGameObjects();
+            foreach (var root in roots)
+            {
+                if (TryFindTransformByHierarchyPath(root.transform, segments, out transform))
+                    return true;
+            }
+
+            return false;
+        }
+
+        private static bool TryFindTransformByHierarchyPath(Transform root, string[] segments, out Transform transform)
+        {
+            transform = null;
+            if (root == null || segments == null || segments.Length == 0)
+                return false;
+
+            if (root.name == segments[0])
+            {
+                transform = FindChildPath(root, segments, 1);
+                if (transform != null)
+                    return true;
+            }
+
+            for (var i = 0; i < root.childCount; i++)
+            {
+                if (TryFindTransformByHierarchyPath(root.GetChild(i), segments, out transform))
+                    return true;
+            }
+
+            return false;
+        }
+
+        private static Transform FindChildPath(Transform root, string[] segments, int index)
+        {
+            if (root == null)
+                return null;
+            if (index >= segments.Length)
+                return root;
+
+            for (var i = 0; i < root.childCount; i++)
+            {
+                var child = root.GetChild(i);
+                if (child.name != segments[index])
+                    continue;
+                return FindChildPath(child, segments, index + 1);
+            }
+
+            return null;
+        }
+
+        private static bool TryCoerceToRecordedType(Object raw, string targetTypeName, out Object obj)
+        {
+            obj = null;
+            if (raw == null)
+                return false;
+
+            var targetType = ResolveType(targetTypeName);
+            if (targetType == null || targetType.IsInstanceOfType(raw))
+            {
+                obj = raw;
+                return true;
+            }
+
+            switch (raw)
+            {
+                case GameObject go:
+                    return TryCoerceGameObjectToRecordedType(go, targetType, out obj);
+                case Component component:
+                    return TryCoerceGameObjectToRecordedType(component.gameObject, targetType, out obj);
+                default:
+                    return false;
+            }
+        }
+
+        private static bool TryCoerceTransformToRecordedType(Transform transform, string targetTypeName, out Object obj)
+        {
+            obj = null;
+            if (transform == null)
+                return false;
+
+            var targetType = ResolveType(targetTypeName);
+            if (targetType == null || targetType == typeof(Transform))
+            {
+                obj = transform;
+                return true;
+            }
+
+            return TryCoerceGameObjectToRecordedType(transform.gameObject, targetType, out obj);
+        }
+
+        private static bool TryCoerceGameObjectToRecordedType(GameObject gameObject, Type targetType, out Object obj)
+        {
+            obj = null;
+            if (gameObject == null || targetType == null)
+                return false;
+
+            if (targetType == typeof(GameObject))
+            {
+                obj = gameObject;
+                return true;
+            }
+
+            if (targetType == typeof(Transform))
+            {
+                obj = gameObject.transform;
+                return true;
+            }
+
+            if (typeof(Component).IsAssignableFrom(targetType))
+            {
+                obj = gameObject.GetComponent(targetType);
+                return obj != null;
+            }
+
+            return false;
+        }
+
+        private static Type ResolveType(string typeName)
+        {
+            if (string.IsNullOrWhiteSpace(typeName))
+                return null;
+            return Type.GetType(typeName);
+        }
+
+#if UNITY_EDITOR
+        private void OnEnable()
+        {
+            EditorResolveMissingObjectBindingTargets();
+        }
+
+        private void OnValidate()
+        {
+            EditorRefreshObjectBindingMetadata();
+            EditorResolveMissingObjectBindingTargets();
+        }
+
         /// <summary>
         /// 登记引用并返回应写入 data JSON 的 token（含 <see cref="ObjectBindingTokenPrefix"/>）。
         /// 若当前 token 已是 btref 则复用其 id；否则新建 id（例如从 GlobalObjectId 迁移）。
@@ -115,9 +322,16 @@ namespace Shibafu.BehaviourTree.Serialization
 
             var idx = _objectBindings.FindIndex(e => e != null && e.bindingId == id);
             if (idx >= 0)
+            {
                 _objectBindings[idx].target = target;
+                EditorUpdateObjectBindingMetadata(_objectBindings[idx], target);
+            }
             else
-                _objectBindings.Add(new BTObjectBindingEntry { bindingId = id, target = target });
+            {
+                var entry = new BTObjectBindingEntry { bindingId = id, target = target };
+                EditorUpdateObjectBindingMetadata(entry, target);
+                _objectBindings.Add(entry);
+            }
 
             UnityEditor.EditorUtility.SetDirty(this);
             return ObjectBindingTokenPrefix + id;
@@ -198,6 +412,96 @@ namespace Shibafu.BehaviourTree.Serialization
 
             Visit(doc);
             return set;
+        }
+
+        private void EditorRefreshObjectBindingMetadata()
+        {
+            var changed = false;
+            foreach (var entry in _objectBindings)
+            {
+                if (entry?.target == null)
+                    continue;
+                changed |= EditorUpdateObjectBindingMetadata(entry, entry.target);
+            }
+
+            if (changed)
+                UnityEditor.EditorUtility.SetDirty(this);
+        }
+
+        private void EditorResolveMissingObjectBindingTargets()
+        {
+            foreach (var entry in _objectBindings)
+            {
+                if (entry == null || entry.target != null)
+                    continue;
+                entry.target = ResolveObjectBindingTarget(entry, null);
+            }
+        }
+
+        private static bool EditorUpdateObjectBindingMetadata(BTObjectBindingEntry entry, Object target)
+        {
+            if (entry == null || target == null)
+                return false;
+
+            var changed = false;
+            SetIfChanged(ref entry.targetTypeName, target.GetType().AssemblyQualifiedName, ref changed);
+            SetIfChanged(ref entry.targetGlobalObjectId, EditorGetGlobalObjectIdString(target), ref changed);
+
+            if (EditorTryGetSceneObject(target, out var gameObject))
+            {
+                SetIfChanged(ref entry.targetScenePath, gameObject.scene.path, ref changed);
+                SetIfChanged(ref entry.targetHierarchyPath, EditorBuildHierarchyPath(gameObject.transform), ref changed);
+            }
+            else
+            {
+                SetIfChanged(ref entry.targetScenePath, null, ref changed);
+                SetIfChanged(ref entry.targetHierarchyPath, null, ref changed);
+            }
+
+            return changed;
+        }
+
+        private static string EditorGetGlobalObjectIdString(Object target)
+        {
+            var objsIn = new[] { target };
+            var idsOut = new UnityEditor.GlobalObjectId[1];
+            UnityEditor.GlobalObjectId.GetGlobalObjectIdsSlow(objsIn, idsOut);
+            return idsOut[0].ToString();
+        }
+
+        private static bool EditorTryGetSceneObject(Object target, out GameObject gameObject)
+        {
+            gameObject = null;
+            switch (target)
+            {
+                case GameObject go:
+                    gameObject = go;
+                    break;
+                case Component component:
+                    gameObject = component.gameObject;
+                    break;
+            }
+
+            return gameObject != null && gameObject.scene.IsValid() && gameObject.scene.isLoaded;
+        }
+
+        private static string EditorBuildHierarchyPath(Transform transform)
+        {
+            if (transform == null)
+                return null;
+
+            var names = new Stack<string>();
+            for (var t = transform; t != null; t = t.parent)
+                names.Push(t.name);
+            return string.Join("/", names);
+        }
+
+        private static void SetIfChanged(ref string current, string next, ref bool changed)
+        {
+            if (string.Equals(current, next, StringComparison.Ordinal))
+                return;
+            current = next;
+            changed = true;
         }
 #endif
     }
