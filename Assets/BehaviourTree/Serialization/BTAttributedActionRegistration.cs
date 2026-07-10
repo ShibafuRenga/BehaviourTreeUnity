@@ -72,25 +72,41 @@ namespace Shibafu.BehaviourTree.Serialization
 
                 foreach (var t in types)
                 {
-                    if (t == null || t.IsAbstract || !typeof(BTAction).IsAssignableFrom(t))
+                    // IsAbstract / IsAssignableFrom 可能对残缺 BCL 类型抛 TypeLoadException
+                    //（例如 System.Net.HttpWebRequest → Mono.Net.Security.MobileTlsProvider）。
+                    string typeId;
+                    Type clrType;
+                    try
+                    {
+                        if (t == null || t.IsAbstract || !typeof(BTAction).IsAssignableFrom(t))
+                            continue;
+                        if (t == typeof(BTAction) || t == typeof(BTDelegateAction))
+                            continue;
+                        if (t.GetConstructor(Type.EmptyTypes) == null)
+                            continue;
+
+                        var attr = t.GetCustomAttribute<BTNodeTypeAttribute>(false);
+                        if (attr == null)
+                            continue;
+
+                        typeId = attr.TypeId?.Trim();
+                        if (string.IsNullOrEmpty(typeId))
+                            continue;
+                        clrType = t;
+                    }
+                    catch (TypeLoadException)
+                    {
                         continue;
-                    if (t == typeof(BTAction) || t == typeof(BTDelegateAction))
+                    }
+                    catch (ReflectionTypeLoadException)
+                    {
                         continue;
-                    if (t.GetConstructor(Type.EmptyTypes) == null)
+                    }
+
+                    if (!seen.Add(typeId))
                         continue;
 
-                    var attr = t.GetCustomAttribute<BTNodeTypeAttribute>(false);
-                    if (attr == null)
-                        continue;
-
-                    var id = attr.TypeId?.Trim();
-                    if (string.IsNullOrEmpty(id))
-                        continue;
-
-                    if (!seen.Add(id))
-                        continue;
-
-                    yield return (id, t);
+                    yield return (typeId, clrType);
                 }
             }
         }
@@ -106,7 +122,9 @@ namespace Shibafu.BehaviourTree.Serialization
                     continue;
 
                 var name = asm.GetName().Name ?? "";
-                if (name.StartsWith("System.", StringComparison.Ordinal) ||
+                // 注意：程序集名恰好为 "System" 时，StartsWith("System.") 匹配不到。
+                if (name == "System" ||
+                    name.StartsWith("System.", StringComparison.Ordinal) ||
                     name.StartsWith("mscorlib", StringComparison.Ordinal) ||
                     name.StartsWith("netstandard", StringComparison.Ordinal) ||
                     name.StartsWith("UnityEngine", StringComparison.Ordinal) ||
